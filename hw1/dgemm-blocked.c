@@ -59,7 +59,7 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
 /*
  * Transposes matrix A of size MxN in-place.
  */
-void* transpose(double* A, int M, int N) {
+void transpose(double* A, int M, int N) {
     // we access a column-major matrix as:
     // A[i,j] = A[row + col * total_columns]
     // For each row i of A
