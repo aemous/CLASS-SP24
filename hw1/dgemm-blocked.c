@@ -41,7 +41,7 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
 /*
  * This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
- * where C is M-by-N, A is M-by-K, and B is K-by-N.
+ * where C is M-by-N, A is K-by-M, and B is K-by-N.
  */
 static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double* B, double* C) {
     // For each column i of transposed A (i.e. row of A)
@@ -112,7 +112,8 @@ void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_columns]
-                do_block_row_major_A(lda, M, N, K, A + k + i * lda, B + k + j * lda, C + i + j * lda);
+                // prviously, the line below said A + k + i * lda, but lets try this
+                do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
             }
         }
     }
