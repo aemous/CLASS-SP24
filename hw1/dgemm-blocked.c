@@ -66,7 +66,6 @@ void transpose(double* A, int M) {
     // A[i,j] = A[row + col * total_columns]
     // For each row i of A
     double temp = 0;
-    printf("Before transpose %f, %f, %f, %f, %f, %f, %f, %f, %f", A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]);
     for (unsigned int i = 0; i < M - 1; ++i) {
         // For each column j of A
         for (unsigned int j = i + 1; j < M; ++j) {
@@ -74,21 +73,11 @@ void transpose(double* A, int M) {
                 // diagonal elements need not be touched in a transpose operation
                 continue;
             }
-            // A[1,0] (A[1]) = A[0,1] (A[3])
-            printf("Swapping i = %d and j = %d", i, j);
-            printf("Swapping A[i,j] = %f and A[j,i] = %f", A[i + j * M], A[j + i * M]);
-            // swap A[i,j] and A[j,i]
             temp = A[i + j * M];
-            // temp = A[3]
             A[i + j * M] = A[j + i * M];
-            // A[3] = A[1]
             A[j + i * M] = temp;
-            // A[1] = temp
-            printf("Result: A[i,j] = %f, A[j,i] = %f", A[i + j * M], A[j + i * M]);
-
         }
     }
-    printf("After transpose %f, %f, %f, %f, %f, %f, %f, %f, %f", A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]);
 }
 
 /* This routine performs a dgemm operation
