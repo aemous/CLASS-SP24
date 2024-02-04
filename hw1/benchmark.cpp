@@ -96,22 +96,22 @@ int main(int argc, char** argv) {
         /* Time a "sufficiently long" sequence of calls to reduce noise */
         double Gflops_s = 0.0, seconds = -1.0;
         double timeout = 0.1; // "sufficiently long" := at least 1/10 second.
-        for (int n_iterations = 1; seconds < timeout; n_iterations *= 2) {
-            /* Warm-up */
-            square_dgemm(n, A, B, C);
-
-            /* Benchmark n_iterations runs of square_dgemm */
-            auto start = std::chrono::steady_clock::now();
-            for (int it = 0; it < n_iterations; ++it) {
-                square_dgemm(n, A, B, C);
-            }
-            auto end = std::chrono::steady_clock::now();
-            std::chrono::duration<double> diff = end - start;
-            seconds = diff.count();
-
-            /*  compute Gflop/s rate */
-            Gflops_s = 2.e-9 * n_iterations * n * n * n / seconds;
-        }
+//        for (int n_iterations = 1; seconds < timeout; n_iterations *= 2) {
+//            /* Warm-up */
+//            square_dgemm(n, A, B, C);
+//
+//            /* Benchmark n_iterations runs of square_dgemm */
+//            auto start = std::chrono::steady_clock::now();
+//            for (int it = 0; it < n_iterations; ++it) {
+//                square_dgemm(n, A, B, C);
+//            }
+//            auto end = std::chrono::steady_clock::now();
+//            std::chrono::duration<double> diff = end - start;
+//            seconds = diff.count();
+//
+//            /*  compute Gflop/s rate */
+//            Gflops_s = 2.e-9 * n_iterations * n * n * n / seconds;
+//        }
 
         /* Storing Mflop rate and calculating percentage of peak */
         double Mflops_s = Gflops_s * 1000;

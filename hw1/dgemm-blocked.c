@@ -74,10 +74,18 @@ void transpose(double* A, int M, int N) {
                 // diagonal elements need not be touched in a transpose operation
                 continue;
             }
+            // A[1,0] (A[1]) = A[0,1] (A[3])
+            printf("Swapping i = %d and j = %d", i, j);
+            printf("Swapping A[i,j] = %f and A[j,i] = %f", A[i + j * N], A[j + i * N]);
             // swap A[i,j] and A[j,i]
             temp = A[i + j * N];
+            // temp = A[3]
             A[i + j * N] = A[j + i * N];
+            // A[3] = A[1]
             A[j + i * N] = temp;
+            // A[1] = temp
+            printf("Result: A[i,j] = %f, A[j,i] = %f", A[i + j * N], A[j + i * N]);
+
         }
     }
     printf("After transpose %f, %f, %f, %f, %f, %f, %f, %f, %f", A[0], A[1], A[2], A[3], A[4], A[5], A[6], A[7], A[8]);
