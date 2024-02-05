@@ -37,7 +37,7 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
             // Compute C(i,j)
             double cij = C[i + j * lda];
             for (unsigned int k = 0; k < K; ++k) {
-                cij += AT[k + i * lda] * B[k + j * lda];
+                cij += AT[k + i * M] * B[k + j * lda];
             }
             C[i + j * lda] = cij;
         }
