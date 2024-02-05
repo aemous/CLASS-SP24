@@ -15,7 +15,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 /*
  * This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
- * where C is M-by-N, A is K-by-M, and B is K-by-N.
+ * where C is M-by-N, A is M-by-K, and B is K-by-N.
  */
 static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double* B, double* C) {
     // transpose the KxM A-block by copying to a new memory location (ideally, aligned)
@@ -23,9 +23,9 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
 
     double* AT = malloc(K * M * sizeof(double));
     // For each column j of AT
-    for (unsigned int j = 0; j < M; ++j) {
+    for (unsigned int j = 0; j < K; ++j) {
         // For each row i of AT
-        for (unsigned int i = 0; i < K; ++i) {
+        for (unsigned int i = 0; i < M; ++i) {
             AT[i + j * lda] = A[j + i * lda];
         }
     }
