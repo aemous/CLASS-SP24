@@ -132,6 +132,7 @@ int main(int argc, char** argv) {
          *  - if they were, the following will most likely detect it:
          * C := C - A * B, computed with reference_dgemm */
         reference_dgemm(n, -1., A, B, C);
+        printf("Reference_dgemm output1: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
 
         /* A := |A|, B := |B|, C := |C| */
         std::transform(A, &A[n * n], A, fabs);
