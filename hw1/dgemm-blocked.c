@@ -142,8 +142,8 @@ void square_dgemm_row_major_A(int lda, double* A_dont_touch, double* B, double* 
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_columns]
-                // TODO, without thinking i addded *LDA to k on arg A below
-                do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
+                // TODO, there's something so fundamentally wrong with this. A + i + k was prev attempt
+                do_block_row_major_A(lda, M, N, K, A + k + i * lda, B + k + j * lda, C + i + j * lda);
             }
         }
     }
