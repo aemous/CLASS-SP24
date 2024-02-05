@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stdio.h>
+#include <immintrin.h>
 
 const char* dgemm_desc = "Simple blocked dgemm.";
 
@@ -23,7 +23,7 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
     // transpose the KxM A-block by copying to a new memory location (ideally, aligned)
     // swap instances of A below with transposed version
 
-    double* AT = malloc(K * M * sizeof(double)); // K rows, M columns
+    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     // For each column j of AT
     for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
