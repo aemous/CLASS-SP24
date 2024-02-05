@@ -1,4 +1,4 @@
-#include <printf.h>
+#include <stdio.h>
 
 const char* dgemm_desc = "Simple blocked dgemm.";
 
