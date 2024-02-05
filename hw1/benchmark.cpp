@@ -52,9 +52,9 @@ int main(int argc, char** argv) {
         865, 895, 896, 897, 927, 928, 929, 959, 960, 961, 991, 992, 993, 1023, 1024, 1025};
 #else
     /* A representative subset of the first list. */
-//    std::vector<int> test_sizes{31,  32,  96,  97,  127, 128, 129, 191, 192, 229, 255, 256, 257,
-//                                319, 320, 321, 417, 479, 480, 511, 512, 639, 640, 767, 768, 769};
-    std::vector<int> test_sizes{4};
+    std::vector<int> test_sizes{31,  32,  96,  97,  127, 128, 129, 191, 192, 229, 255, 256, 257,
+                                319, 320, 321, 417, 479, 480, 511, 512, 639, 640, 767, 768, 769};
+//    std::vector<int> test_sizes{4};
 #endif
 
     if (argc > 1) {
@@ -96,21 +96,21 @@ int main(int argc, char** argv) {
         /* Time a "sufficiently long" sequence of calls to reduce noise */
         double Gflops_s = 0.0, seconds = -1.0;
         double timeout = 0.1; // "sufficiently long" := at least 1/10 second.
-//        for (int n_iterations = 1; seconds < timeout; n_iterations *= 2) {
-//            /* Warm-up */
-//            square_dgemm(n, A, B, C);
-//
-//            /* Benchmark n_iterations runs of square_dgemm */
-//            auto start = std::chrono::steady_clock::now();
-//            for (int it = 0; it < n_iterations; ++it) {
-//                square_dgemm(n, A, B, C);
-//            }
-//            auto end = std::chrono::steady_clock::now();
-//            std::chrono::duration<double> diff = end - start;
-//            seconds = diff.count();
-//
-//            /*  compute Gflop/s rate */
-//            Gflops_s = 2.e-9 * n_iterations * n * n * n / seconds;
+        for (int n_iterations = 1; seconds < timeout; n_iterations *= 2) {
+            /* Warm-up */
+            square_dgemm(n, A, B, C);
+
+            /* Benchmark n_iterations runs of square_dgemm */
+            auto start = std::chrono::steady_clock::now();
+            for (int it = 0; it < n_iterations; ++it) {
+                square_dgemm(n, A, B, C);
+            }
+            auto end = std::chrono::steady_clock::now();
+            std::chrono::duration<double> diff = end - start;
+            seconds = diff.count();
+
+            /*  compute Gflop/s rate */
+            Gflops_s = 2.e-9 * n_iterations * n * n * n / seconds;
 //        }
 
         /* Storing Mflop rate and calculating percentage of peak */
@@ -132,7 +132,7 @@ int main(int argc, char** argv) {
          *  - if they were, the following will most likely detect it:
          * C := C - A * B, computed with reference_dgemm */
         reference_dgemm(n, -1., A, B, C);
-        printf("Reference_dgemm output1: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
+//        printf("Reference_dgemm output1: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
 
         /* A := |A|, B := |B|, C := |C| */
         std::transform(A, &A[n * n], A, fabs);
