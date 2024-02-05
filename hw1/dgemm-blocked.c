@@ -114,7 +114,7 @@ void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_columns]
-                do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
+                do_block_row_major_A(lda, M, N, K, A + i + k, B + k + j * lda, C + i + j * lda);
             }
         }
     }
