@@ -4,7 +4,7 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 36
+#define BLOCK_SIZE 8
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -104,12 +104,12 @@ void deep_copy(int M, int N, double* A, double* B) {
  *  C := C + A * B
  * where A, B, and C are lda-by-lda matrices stored in column-major format
  * On exit, A and B maintain their input values. */
-void square_dgemm_row_major_A(int lda, double* A_dont_touch, double* B, double* C) {
+void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
     // here, we'll transpose A, and after that it'll still be lda x lda
 
 //    printf("Input A: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", A_dont_touch[0], A_dont_touch[4], A_dont_touch[8], A_dont_touch[12], A_dont_touch[1], A_dont_touch[5], A_dont_touch[9], A_dont_touch[13], A_dont_touch[2], A_dont_touch[6], A_dont_touch[10], A_dont_touch[14], A_dont_touch[3], A_dont_touch[7], A_dont_touch[11], A_dont_touch[15]);
-    double* A = malloc(lda * lda * sizeof(double));
-    deep_copy(lda, lda, A_dont_touch, A);
+//    double* A = malloc(lda * lda * sizeof(double));
+//    deep_copy(lda, lda, A_dont_touch, A);
 //    printf("Input A copied: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", A[0], A[4], A[8], A[12], A[1], A[5], A[9], A[13], A[2], A[6], A[10], A[14], A[3], A[7], A[11], A[15]);
 //    printf("Input B: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", B[0], B[4], B[8], B[12], B[1], B[5], B[9], B[13], B[2], B[6], B[10], B[14], B[3], B[7], B[11], B[15]);
 //    printf("Input C: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
@@ -149,7 +149,7 @@ void square_dgemm_row_major_A(int lda, double* A_dont_touch, double* B, double* 
     }
 
 //    printf("Result C: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
-    free(A);
+//    free(A);
 }
 
 /* This routine performs a dgemm operation
