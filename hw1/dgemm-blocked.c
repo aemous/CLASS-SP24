@@ -23,10 +23,10 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
 
     double* AT = malloc(K * M * sizeof(double));
     // For each column j of AT
-    for (unsigned int j = 0; j < K; ++j) {
+    for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
-        for (unsigned int i = 0; i < M; ++i) {
-            AT[i + j * lda] = A[j + i * lda];
+        for (unsigned int i = 0; i < K; ++i) {
+            AT[i + j * M] = A[j + i * lda];
         }
     }
 
