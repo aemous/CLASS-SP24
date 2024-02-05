@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <printf.h>
+
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
@@ -21,13 +23,23 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
     // transpose the KxM A-block by copying to a new memory location (ideally, aligned)
     // swap instances of A below with transposed version
 
-    double* AT = malloc(K * M * sizeof(double));
+    double* AT = malloc(K * M * sizeof(double)); // K rows, M columns
     // For each column j of AT
     for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
         for (unsigned int i = 0; i < K; ++i) {
-            AT[i + j * M] = A[j + i * lda];
+            AT[i + j * K] = A[j + i * lda];
         }
+    }
+
+    printf("AT: \n");
+    // For each row i of AT
+    for (unsigned int i = 0; i < K; ++i) {
+        // For each column j of AT
+        for (unsigned int j = 0; j < M; ++j) {
+            printf("%f ", AT[i + j * K]);
+        }
+        printf("\n");
     }
 
     // For each column i of transposed A (i.e. row of A)
