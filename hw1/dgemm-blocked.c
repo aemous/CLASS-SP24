@@ -88,6 +88,8 @@ void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
     // here, we'll transpose A, and after that it'll still be lda x lda
     transpose(A, lda);
 
+    // TODO i verified transpose works. but something is wrong with the code below (possibly including do_block_row_major_A
+
     // the big question: does it matter how we iterate the blocks ? I think so.
     // I think it'll be more efficient to iterate the blocks in the direction of the 'majorness' of the matrix.
 
@@ -102,7 +104,7 @@ void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
             // Accumulate block dgemms into block of C
             for (int k = 0; k < lda; k += BLOCK_SIZE) {
                 // Correct block dimensions if block "goes off edge of" the matrix
-                int M = min(BLOCK_SIZE, lda - i);
+                int M = min(BLOCK_SIZE, lda - i); // shouldnt this be lda - i - 1 ? same for below
                 int N = min(BLOCK_SIZE, lda - j);
                 int K = min(BLOCK_SIZE, lda - k);
                 // Perform individual block dgemm
@@ -112,7 +114,6 @@ void square_dgemm_row_major_A(int lda, double* A, double* B, double* C) {
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_columns]
-                // prviously, the line below said A + k + i * lda, but lets try this
                 do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
             }
         }
