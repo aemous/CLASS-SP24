@@ -43,15 +43,15 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
 //    }
 
     // For each column i of transposed A (i.e. row of A)
-    for (unsigned int i = 0; i < M; ++i) {
+    for (unsigned int k = 0; k < K; ++k) {
+        for (unsigned int i = 0; i < M; ++i) {
         // For each column j of B
-        for (unsigned int j = 0; j < N; ++j) {
-            // Compute C(i,j)
-            double cij = C[i + j * lda];
-            for (unsigned int k = 0; k < K; ++k) {
-                cij += AT[k + i * K] * B[k + j * lda];
+            for (unsigned int j = 0; j < N; ++j) {
+                // Compute C(i,j)
+                double cij = C[i + j * lda];
+                    cij += AT[k + i * K] * B[k + j * lda];
+                C[i + j * lda] = cij;
             }
-            C[i + j * lda] = cij;
         }
     }
 
