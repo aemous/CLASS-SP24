@@ -89,7 +89,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
                 // col major matrix :
                 // A[i,j] = A[row + col * total_rows]
                 // TODO if we fail correctness, swap k and i in A arg below
-                do_block_row_major_A(lda, M, N, K, A + k + i * lda, B + k + j * lda, C + i + j * lda);
+                do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
             }
         }
     }
