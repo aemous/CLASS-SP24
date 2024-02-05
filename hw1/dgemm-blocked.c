@@ -59,12 +59,13 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
     }
 }
 
+// TODO technically below code works since square, but its reading incorrectly, fix later
 /*
  * Transposes matrix A of size MxM in-place.
  */
 void transpose(double* A, int M) {
     // we access a column-major matrix as:
-    // A[i,j] = A[row + col * total_columns]
+    // A[i,j] = A[row + col * total_rows]
     // For each row i of A
     double temp = 0;
     for (unsigned int i = 0; i < M - 1; ++i) {
@@ -82,6 +83,7 @@ void transpose(double* A, int M) {
 }
 
 // TODO: this will probaably become obsolete once we do m_alloc (or maybe not?) who cares
+// TODO: technically code below works because we only call it with M=N, but it reads incorrectly, fix it later
 /*
  * Given a M x N column-major matrix A, copy its contents into matrix B column-major
  */
@@ -92,6 +94,8 @@ void deep_copy(int M, int N, double* A, double* B) {
         for (unsigned int j = 0; j < M; ++j) {
             // Copy A[j,i] into B[j,i]
             B[j + i * N] = A[j + i * N];
+            // if i did j + i * M, max would be: (M-1) + (N-1) * M = M - 1 + NM - m
+            // max value of index: (M-1) + (N-1) * N = M - 1 + N^2 - N
         }
     }
 }
@@ -138,7 +142,8 @@ void square_dgemm_row_major_A(int lda, double* A_dont_touch, double* B, double* 
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_columns]
-                do_block_row_major_A(lda, M, N, K, A + i + k, B + k + j * lda, C + i + j * lda);
+                // TODO, without thinking i addded *LDA to k on arg A below
+                do_block_row_major_A(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
             }
         }
     }
