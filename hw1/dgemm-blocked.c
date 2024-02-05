@@ -32,15 +32,15 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
         }
     }
 
-    printf("AT: \n");
-    // For each row i of AT
-    for (unsigned int i = 0; i < K; ++i) {
-        // For each column j of AT
-        for (unsigned int j = 0; j < M; ++j) {
-            printf("%f ", AT[i + j * K]);
-        }
-        printf("\n");
-    }
+//    printf("AT: \n");
+//    // For each row i of AT
+//    for (unsigned int i = 0; i < K; ++i) {
+//        // For each column j of AT
+//        for (unsigned int j = 0; j < M; ++j) {
+//            printf("%f ", AT[i + j * K]);
+//        }
+//        printf("\n");
+//    }
 
     // For each column i of transposed A (i.e. row of A)
     for (unsigned int i = 0; i < M; ++i) {
