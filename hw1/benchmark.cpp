@@ -111,7 +111,7 @@ int main(int argc, char** argv) {
 
             /*  compute Gflop/s rate */
             Gflops_s = 2.e-9 * n_iterations * n * n * n / seconds;
-//        }
+        }
 
         /* Storing Mflop rate and calculating percentage of peak */
         double Mflops_s = Gflops_s * 1000;
