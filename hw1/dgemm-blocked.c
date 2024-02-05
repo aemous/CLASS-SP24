@@ -1,7 +1,8 @@
+#include <stdlib.h>
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 12
+#define BLOCK_SIZE 20
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -17,6 +18,18 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * where C is M-by-N, A is K-by-M, and B is K-by-N.
  */
 static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double* B, double* C) {
+    // transpose the KxM A-block by copying to a new memory location (ideally, aligned)
+    // swap instances of A below with transposed version
+
+    double* AT = malloc(K * M * sizeof(double));
+    // For each column j of AT
+    for (unsigned int j = 0; j < M; ++j) {
+        // For each row i of AT
+        for (unsigned int i = 0; i < K; ++i) {
+            AT[i + j * lda] = A[j + i * lda];
+        }
+    }
+
     // For each column i of transposed A (i.e. row of A)
     for (unsigned int i = 0; i < M; ++i) {
         // For each column j of B
@@ -24,11 +37,14 @@ static void do_block_row_major_A(int lda, int M, int N, int K, double* A, double
             // Compute C(i,j)
             double cij = C[i + j * lda];
             for (unsigned int k = 0; k < K; ++k) {
-                cij += A[k + i * lda] * B[k + j * lda];
+                cij += AT[k + i * lda] * B[k + j * lda];
             }
             C[i + j * lda] = cij;
         }
     }
+
+    // free the transposed A from memory
+    free(AT);
 }
 
 /*
@@ -59,7 +75,7 @@ void transpose(double* A, int M) {
  * On exit, A and B maintain their input values. */
 void square_dgemm(int lda, double* A, double* B, double* C) {
     // here, we'll transpose A, and after that it'll still be lda x lda
-    transpose(A, lda);
+//    transpose(A, lda);
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
         // For each block-column of B
         for (int j = 0; j < lda; j += BLOCK_SIZE) {
@@ -72,9 +88,10 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 
                 // col major matrix :
                 // A[i,j] = A[row + col * total_rows]
+                // TODO if we fail correctness, swap k and i in A arg below
                 do_block_row_major_A(lda, M, N, K, A + k + i * lda, B + k + j * lda, C + i + j * lda);
             }
         }
     }
-    transpose(A, lda);
+//    transpose(A, lda);
 }
