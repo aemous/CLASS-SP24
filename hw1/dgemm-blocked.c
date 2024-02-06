@@ -1,4 +1,5 @@
 #include <immintrin.h>
+#include <stdio.h>
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
@@ -61,7 +62,7 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
             for (int k = 0; k < 4; k++) {
                 cij += dotProduct[k];
             }
-//            C[i + j * lda] += cij;
+            C[i + j * lda] += cij;
         }
     }
     free(AT);
@@ -79,6 +80,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         for (int j = 0; j < lda; j += BLOCK_SIZE) {
             // Accumulate block dgemms into block of C
             for (int k = 0; k < lda; k += BLOCK_SIZE) {
+                printf("i = %d, j = %d, k = %d", i, j ,k);
                 // Correct block dimensions if block "goes off edge of" the matrix
                 int M = min(BLOCK_SIZE, lda - i);
                 int N = min(BLOCK_SIZE, lda - j);
