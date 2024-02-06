@@ -66,10 +66,10 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
             rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
             rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
             rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
-            colB1 = _mm256_load_pd(BBLock + j * lda);
-            colB2 = _mm256_load_pd(BBLock + 4 + j * lda);
-            colB3 = _mm256_load_pd(BBLock + 8 + j * lda);
-            colB4 = _mm256_load_pd(BBLock + 12 + j * lda);
+            colB1 = _mm256_load_pd(BBLock + j * BLOCK_SIZE);
+            colB2 = _mm256_load_pd(BBLock + 4 + j * BLOCK_SIZE);
+            colB3 = _mm256_load_pd(BBLock + 8 + j * BLOCK_SIZE);
+            colB4 = _mm256_load_pd(BBLock + 12 + j * BLOCK_SIZE);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
             __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
