@@ -14,7 +14,6 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
  */
 static void do_block(int lda, int M, int N, int K, double* A, double* B, double* C, double* dotProduct, double* AT) {
-    // TODO one might consider static allocating the blocks in advanced
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
@@ -27,10 +26,21 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
 
     // transpose the A-block for SIMD-compatibility
     // For each column j of AT
-    for (unsigned int j = 0; j < M; ++j) {
+//    for (unsigned int j = 0; j < M; ++j) {
+//        // For each row i of AT
+//        for (unsigned int i = 0; i < K; ++i) {
+////            AT[i + j * K] = A[j + i * lda];
+//            AT[i + j * BLOCK_SIZE] = A[j + i * lda];
+//        }
+//    }
+    for (unsigned int j = 0; j < BLOCK_SIZE; ++j) {
         // For each row i of AT
-        for (unsigned int i = 0; i < K; ++i) {
+        for (unsigned int i = 0; i < BLOCK_SIZE; ++i) {
 //            AT[i + j * K] = A[j + i * lda];
+            if (i >= K || j >= M) {
+                AT[i + j * BLOCK_SIZE] = 0;
+                continue;
+            }
             AT[i + j * BLOCK_SIZE] = A[j + i * lda];
         }
     }
@@ -46,7 +56,10 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
 //            rowA2 = _mm256_load_pd(AT + 4 + i * K);
 //            rowA3 = _mm256_load_pd(AT + 8 + i * K);
 //            rowA4 = _mm256_load_pd(AT + 12 + i * K);
+
+            // if K >= 4, do this:
             rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
+            // what if K < 4 ?
             rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
             rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
             rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
@@ -79,6 +92,9 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
 void square_dgemm(int lda, double* A, double* B, double* C) {
     double* dotProduct = _mm_malloc(4 * sizeof(double), 64); // temp array of size 4 whose sum is a dot product
     double* AT = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64); // temp array to store a transposed block
+
+    // should we pad A and B so that it is a multiple of BLOCK_SIZE ?
+    // this might be nice, since we could memory-align B while we're at it, AND we fix the current bug
 
     // For each block-row of A
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
