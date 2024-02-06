@@ -51,9 +51,9 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
             colB4 = _mm256_load_pd(B + 12 + j * lda);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
-//            // compute second 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
+            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
+            // compute second 'half' of the dot product of A[i,:] and B[:,j]
+            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
 //
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
 //            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
