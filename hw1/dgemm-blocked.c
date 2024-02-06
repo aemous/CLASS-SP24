@@ -65,7 +65,6 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
         }
     }
     free(AT);
-    free(dotProduct);
 }
 
 /* This routine performs a dgemm operation
