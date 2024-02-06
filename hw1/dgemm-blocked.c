@@ -37,21 +37,16 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
         // For each row i of AT
         for (unsigned int i = 0; i < BLOCK_SIZE; ++i) {
 //            AT[i + j * K] = A[j + i * lda];
-            if (i >= K) {
+            if (i < K && j < M) {
+                AT[i + j * BLOCK_SIZE] = A[j + i * lda];
+            } else {
                 AT[i + j * BLOCK_SIZE] = 0;
+            }
+            if (i < K && j < N) {
+                BBLock[i + j * BLOCK_SIZE] = B[i + j * lda];
+            } else {
                 BBLock[i + j * BLOCK_SIZE] = 0;
-                continue;
             }
-            if (j >= M) {
-                AT[i + j * BLOCK_SIZE] = 0;
-                continue;
-            }
-            if (j >= N) {
-                BBLock[i + j * BLOCK_SIZE] = 0;
-                continue;
-            }
-            AT[i + j * BLOCK_SIZE] = A[j + i * lda];
-            BBLock[i + j * BLOCK_SIZE] = B[i + j * lda];
         }
     }
 
