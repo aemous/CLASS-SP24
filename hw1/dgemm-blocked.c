@@ -56,8 +56,8 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
             __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
 //
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
-//            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
-//            double cij = C[i + j * lda];
+            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
+            double cij = C[i + j * lda];
 //            for (int k = 0; k < 4; k++) {
 //                cij += dotProduct[k];
 //            }
