@@ -2,7 +2,7 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 8
+#define BLOCK_SIZE 16
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -13,10 +13,19 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
  */
 static void do_block(int lda, int M, int N, int K, double* A, double* B, double* C) {
-    // Here's the plan for SIMD:
-    // Switch block size to 8
-    // Declare 2 512 vectors, to store a row of A and a column of B
+    // TODO one might consider static allocating the blocks and dotProduct vector in advanced
     double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
+    double* dotProduct = _mm_malloc(4 * sizeof(double), 64); // temp array of size 4 whose sum is a dot product
+    __m256d rowA1; // stores first quarter of row i of A
+    __m256d rowA2; // stores second quarter of row i of A
+    __m256d rowA3; // stores third quarter of row i of A
+    __m256d rowA4; // stores fourth quarter of row i of A
+    __m256d colB1; // stores first quarter of column j of B
+    __m256d colB2; // stores second quarter of column j of B
+    __m256d colB3; // stores third quarter of column j of B
+    __m256d colB4; // stores fourth quarter of column j of B
+
+    // transpose the A-block for SIMD-compatibility
     // For each column j of AT
     for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
@@ -25,28 +34,37 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
         }
     }
 
-    __m512d rowA;
-    __m512d colB;
-
-    // Then, replace the inner-most loop with:
-        // Load row i of A into the 512 vector
-        // Load column j of B into the 512 vector
-        // call _mm512_mul_pd on the two vectors, then call
-        // _mm512_reduce_add_pd on the result, add this result to cij.
-
+    // compute the multiplication
     // For each row i of A
     for (int i = 0; i < M; ++i) {
         // For each column j of B
         for (int j = 0; j < N; ++j) {
             // Compute C(i,j)
-            rowA = _mm512_load_pd(AT + i * K);
-            colB = _mm512_load_pd(B + j * K);
-//            double cij = C[i + j * lda];
-//          cij += A[i + k * lda] * B[k + j * lda];
-            C[i + j * lda] += _mm512_reduce_add_pd(_mm512_mul_pd(rowA, colB));
+            rowA1 = _mm256_load_pd(AT + i * K);
+            rowA2 = _mm256_load_pd(AT + 4 + i * K);
+            rowA3 = _mm256_load_pd(AT + 8 + i * K);
+            rowA4 = _mm256_load_pd(AT + 12 + i * K);
+            colB1 = _mm256_load_pd(B + j * lda);
+            colB2 = _mm256_load_pd(B + 4 + j * lda);
+            colB3 = _mm256_load_pd(B + 8 + j * lda);
+            colB4 = _mm256_load_pd(B + 12 + j * lda);
+
+            // compute first 'half' of the dot product of A[i,:] and B[:,j]
+            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
+            // compute second 'half' of the dot product of A[i,:] and B[:,j]
+            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
+
+            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
+            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
+            double cij = C[i + j * lda];
+            for (int k = 0; k < 4; k++) {
+                cij += dotProduct[k];
+            }
+            C[i + j * lda] += cij;
         }
     }
     free(AT);
+    free(dotProduct);
 }
 
 /* This routine performs a dgemm operation
