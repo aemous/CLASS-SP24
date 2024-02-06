@@ -13,9 +13,9 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
  */
-static void do_block(int lda, int M, int N, int K, double* A, double* B, double* C, double* dotProduct) {
+static void do_block(int lda, int M, int N, int K, double* A, double* B, double* C, double* dotProduct, double* AT) {
     // TODO one might consider static allocating the blocks in advanced
-    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
+//    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
     __m256d rowA3; // stores third quarter of row i of A
@@ -30,7 +30,8 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
     for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
         for (unsigned int i = 0; i < K; ++i) {
-            AT[i + j * K] = A[j + i * lda];
+//            AT[i + j * K] = A[j + i * lda];
+            AT[i + j * BLOCK_SIZE] = A[j + i * lda];
         }
     }
 
@@ -41,10 +42,14 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
         for (int j = 0; j < N; ++j) {
             // Compute C(i,j)
             // TODO if we get correctness error, it might be due to the case that the block is smaller than BLOCK_SIZE
-            rowA1 = _mm256_load_pd(AT + i * K);
-            rowA2 = _mm256_load_pd(AT + 4 + i * K);
-            rowA3 = _mm256_load_pd(AT + 8 + i * K);
-            rowA4 = _mm256_load_pd(AT + 12 + i * K);
+//            rowA1 = _mm256_load_pd(AT + i * K);
+//            rowA2 = _mm256_load_pd(AT + 4 + i * K);
+//            rowA3 = _mm256_load_pd(AT + 8 + i * K);
+//            rowA4 = _mm256_load_pd(AT + 12 + i * K);
+            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
+            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
+            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
+            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
             colB1 = _mm256_load_pd(B + j * lda);
             colB2 = _mm256_load_pd(B + 4 + j * lda);
             colB3 = _mm256_load_pd(B + 8 + j * lda);
@@ -64,7 +69,7 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
             C[i + j * lda] += cij;
         }
     }
-    free(AT);
+//    free(AT);
 }
 
 /* This routine performs a dgemm operation
@@ -73,6 +78,7 @@ static void do_block(int lda, int M, int N, int K, double* A, double* B, double*
  * On exit, A and B maintain their input values. */
 void square_dgemm(int lda, double* A, double* B, double* C) {
     double* dotProduct = _mm_malloc(4 * sizeof(double), 64); // temp array of size 4 whose sum is a dot product
+    double* AT = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64); // temp array to store a transposed block
 
     // For each block-row of A
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
@@ -86,9 +92,10 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
                 int N = min(BLOCK_SIZE, lda - j);
                 int K = min(BLOCK_SIZE, lda - k);
                 // Perform individual block dgemm
-                do_block(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda, dotProduct);
+                do_block(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda, dotProduct, AT);
            }
         }
     }
+    free(AT);
     free(dotProduct);
 }
