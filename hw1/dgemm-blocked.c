@@ -76,7 +76,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         for (int j = 0; j < lda; j += BLOCK_SIZE) {
             // Accumulate block dgemms into block of C
             for (int k = 0; k < lda; k += BLOCK_SIZE) {
-                printf("i = %d, j = %d, k = %d", i, j ,k);
+//                printf("i = %d, j = %d, k = %d", i, j ,k);
                 // Correct block dimensions if block "goes off edge of" the matrix
                 int M = min(BLOCK_SIZE, lda - i);
                 int N = min(BLOCK_SIZE, lda - j);
