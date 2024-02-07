@@ -1,9 +1,16 @@
-#include <immintrin.h>
-#include <stdio.h>
 const char* dgemm_desc = "Simple blocked dgemm.";
 
+#include <immintrin.h>
+//#include <stdio.h>
+
+// Define micro-block (kernel) size
+#ifndef BI_SIZE
+#define BI_SIZE 2
+#endif
+
+// TODO utilize this for higher-level block
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 41
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -13,86 +20,59 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
  */
-static void do_block(int lda, int ldaRounded, int M, int N, int K, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
-//    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
-    __m256d rowA1; // stores first quarter of row i of A
-    __m256d rowA2; // stores second quarter of row i of A
-    __m256d rowA3; // stores third quarter of row i of A
-    __m256d rowA4; // stores fourth quarter of row i of A
-    __m256d colB1; // stores first quarter of column j of B
-    __m256d colB2; // stores second quarter of column j of B
-    __m256d colB3; // stores third quarter of column j of B
-    __m256d colB4; // stores fourth quarter of column j of B
-
-    // transpose the A-block for SIMD-compatibility
-    // For each column j of AT
-//    for (unsigned int j = 0; j < M; ++j) {
-//        // For each row i of AT
-//        for (unsigned int i = 0; i < K; ++i) {
-////            AT[i + j * K] = A[j + i * lda];
-//            AT[i + j * BLOCK_SIZE] = A[j + i * lda];
-//        }
-//    }
-    for (unsigned int j = 0; j < M; ++j) {
-        // For each row i of AT
-        for (unsigned int i = 0; i < K; ++i) {
-            AT[i + j * K] = A[j + i * ldaRounded];
-//            if (i < K && j < M) {
-//                AT[i + j * BLOCK_SIZE] = A[j + i * lda];
-//            } else {
-//                AT[i + j * BLOCK_SIZE] = 0;
-//            }
-//            if (i < K && j < N) {
-//                BBLock[i + j * BLOCK_SIZE] = B[i + j * lda];
-//            } else {
-//                BBLock[i + j * BLOCK_SIZE] = 0;
-//            }
-        }
-    }
-
-    for (unsigned int j = 0; j < N; ++j) {
-        for (unsigned int i = 0; i < K; ++i) {
-            BBlock[i + j * K] = B[i + j * ldaRounded];
-        }
-    }
-
-    // TODO the problem is C
-    // compute the multiplication
+static void do_block(int lda, int M, int N, int K, double* A, double* B, double* C) {
     // For each row i of A
     for (int i = 0; i < M; ++i) {
         // For each column j of B
         for (int j = 0; j < N; ++j) {
             // Compute C(i,j)
-            // TODO if we get correctness error, it might be due to the case that the block is smaller than BLOCK_SIZE
-//            rowA1 = _mm256_load_pd(AT + i * K);
-//            rowA2 = _mm256_load_pd(AT + 4 + i * K);
-//            rowA3 = _mm256_load_pd(AT + 8 + i * K);
-//            rowA4 = _mm256_load_pd(AT + 12 + i * K);
-
-            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
-            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
-            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
-            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
-            colB1 = _mm256_load_pd(BBlock + j * BLOCK_SIZE);
-            colB2 = _mm256_load_pd(BBlock + 4 + j * BLOCK_SIZE);
-            colB3 = _mm256_load_pd(BBlock + 8 + j * BLOCK_SIZE);
-            colB4 = _mm256_load_pd(BBlock + 12 + j * BLOCK_SIZE);
-
-            // compute first 'half' of the dot product of A[i,:] and B[:,j]
-            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
-            // compute second 'half' of the dot product of A[i,:] and B[:,j]
-            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
-//
-//            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
-            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
             double cij = C[i + j * lda];
-            for (int k = 0; k < 4; k++) {
-                cij += dotProduct[k];
+            for (int k = 0; k < K; ++k) {
+                cij += A[i + k * lda] * B[k + j * lda];
             }
-            C[i + j * lda] += cij;
+            C[i + j * lda] = cij;
         }
     }
-//    free(AT);
+}
+
+/*
+ * This auxiliary subroutine performs a smaller dgemm operation
+ *  C := C + A * B
+ * where C is M-by-N, A and A_block are M-by-K, and B and B_block are K-by-N.
+ */
+static void do_micro_block(int lda,
+                           int M,
+                           int N,
+                           int K,
+                           unsigned int bj,
+                           unsigned int bi,
+                           unsigned int bk,
+                           double* A,
+                           double* B,
+                           double* C,
+                           double* A_block,
+                           double* B_block) {
+    // Obtain a block-contiguous view on A transposed
+    // TODO
+
+    // Obtain a block-contiguous view on B
+    // TODO
+
+    // TODO also obtain a block-contiguous view on C
+
+
+    // For each row i of A
+    for (int i = 0; i < M; ++i) {
+        // For each column j of B
+        for (int j = 0; j < N; ++j) {
+            // Compute C(i,j)
+            double cij = C[i + j * lda];
+            for (int k = 0; k < K; ++k) {
+                cij += A[i + k * lda] * B[k + j * lda];
+            }
+            C[i + j * lda] = cij;
+        }
+    }
 }
 
 /* This routine performs a dgemm operation
@@ -100,29 +80,27 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, double* A, do
  * where A, B, and C are lda-by-lda matrices stored in column-major format.
  * On exit, A and B maintain their input values. */
 void square_dgemm(int lda, double* A, double* B, double* C) {
-    double* dotProduct = _mm_malloc(4 * sizeof(double), 64); // temp array of size 4 whose sum is a dot product
-    double* AT = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64); // temp array to store a transposed block
-    double* BBlock = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64);
+    double* A_block = _mm_malloc(BI_SIZE * BI_SIZE * sizeof(double), 64);
+    double* B_block = _mm_malloc(BI_SIZE * BI_SIZE * sizeof(double), 64);
 
-    // round lda up to the nearest BLOCK_SIZE multiple
-    int ldaRounded = lda % BLOCK_SIZE == 0 ? lda : lda + (BLOCK_SIZE - (lda % BLOCK_SIZE));
-    double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
-    double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
-
-    // TODO one might consider transposing A right now (instead of per-block) and compare performance
-    // copy A to AAligned, pad with zeros
-    for (unsigned int i = 0; i < ldaRounded; ++i) {
-        for (unsigned int j = 0; j < ldaRounded; ++j) {
-            AAligned[i + j * ldaRounded] = i < lda && j < lda ? A[i + j * lda] : 0;
+    // TODO implement a higher-level block size above the micro-level
+    // For each block column bj of B
+    for (unsigned int bj = 0; bj < lda; bj += BI_SIZE) {
+        // For each block row bi of A
+        for (unsigned int bi = 0; bi < lda; bi += BI_SIZE) {
+            // Accumulate block dgemms into block of C
+            for (unsigned int bk = 0; bk < lda; bk += BI_SIZE) {
+                // Correct block dimensions if block "goes off edge of" the matrix
+                int M = min(BLOCK_SIZE, lda - bi);
+                int N = min(BLOCK_SIZE, lda - bj);
+                int K = min(BLOCK_SIZE, lda - bk);
+                do_micro_block(lda, M, N, K, bj, bi, bk, A + bi + bk * lda, B + bk + bj * lda, C + bi + bj * lda, A_block, B_block);
+            }
         }
     }
 
-    // copy B to BAligned, padded with zeros
-    for (unsigned int i = 0; i < ldaRounded; ++i) {
-        for (unsigned int j = 0; j < ldaRounded; ++j) {
-            BAligned[i + j * ldaRounded] = i < lda && j < lda ? B[i + j * lda] : 0;
-        }
-    }
+    free(A_block);
+    free(B_block);
 
     // For each block-row of A
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
@@ -130,20 +108,13 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         for (int j = 0; j < lda; j += BLOCK_SIZE) {
             // Accumulate block dgemms into block of C
             for (int k = 0; k < lda; k += BLOCK_SIZE) {
-//                printf("i = %d, j = %d, k = %d", i, j ,k);
                 // Correct block dimensions if block "goes off edge of" the matrix
-                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
                 int M = min(BLOCK_SIZE, lda - i);
                 int N = min(BLOCK_SIZE, lda - j);
                 int K = min(BLOCK_SIZE, lda - k);
                 // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
-           }
+                do_block(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
+            }
         }
     }
-    free(AT);
-    free(dotProduct);
-    free(BBlock);
-    free(AAligned);
-    free(BAligned);
 }
