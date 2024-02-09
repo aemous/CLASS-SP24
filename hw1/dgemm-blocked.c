@@ -3,7 +3,7 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
-#define BLOCK_SIZE 16
+#define BLOCK_SIZE 8
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -84,20 +84,21 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
             rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
             rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
-            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
-            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
+//            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
+//            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
             colB1 = _mm256_load_pd(B + j * ldaRounded);
             colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
-            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
-            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
+//            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
+//            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
             __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
             // compute second 'half' of the dot product of A[i,:] and B[:,j]
-            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
+//            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
 //
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
-            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
+//            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
+            _mm256_store_pd(dotProduct, dot1);
             double cij = C[i + j * lda];
             for (int k = 0; k < 4; ++k) {
                 cij += dotProduct[k];
