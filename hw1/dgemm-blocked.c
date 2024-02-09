@@ -11,7 +11,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 /*
  * This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
- * where C is M-by-N, A is M-by-K, and B is K-by-N.
+ * where C is M-by-N, A is K-by-M, and B is K-by-N.
  * bi is the block-row of A. bj is the block-column of B, bk is the block number (of A and B).
  */
 static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
@@ -34,10 +34,10 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            AT[i + j * BLOCK_SIZE] = A[j + i * lda];
 //        }
 //    }
-    for (unsigned int j = 0; j < M; ++j) {
+//    for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
-        for (unsigned int i = 0; i < K; ++i) {
-            AT[i + j * K] = A[j + bk + (i + bi) * ldaRounded];
+//        for (unsigned int i = 0; i < K; ++i) {
+//            AT[i + j * K] = A[j + bk + (i + bi) * ldaRounded];
 //            if (i < K && j < M) {
 //                AT[i + j * BLOCK_SIZE] = A[j + i * lda];
 //            } else {
@@ -48,16 +48,16 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            } else {
 //                BBLock[i + j * BLOCK_SIZE] = 0;
 //            }
-        }
-    }
+//        }
+//    }
 
-    for (unsigned int j = 0; j < N; ++j) {
-        for (unsigned int i = 0; i < K; ++i) {
-            BBlock[i + j * K] = B[i + bk + (j + bj) * ldaRounded];
-        }
-    }
+    // this obtains a block-contiguous view on B. let's consider it later after we get this working
+//    for (unsigned int j = 0; j < N; ++j) {
+//        for (unsigned int i = 0; i < K; ++i) {
+//            BBlock[i + j * K] = B[i + bk + (j + bj) * ldaRounded];
+//        }
+//    }
 
-    // TODO the problem is C
     // compute the multiplication
     // For each row i of A
     for (int i = 0; i < M; ++i) {
@@ -70,14 +70,22 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            rowA3 = _mm256_load_pd(AT + 8 + i * K);
 //            rowA4 = _mm256_load_pd(AT + 12 + i * K);
 
-            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
-            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
-            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
-            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
-            colB1 = _mm256_load_pd(BBlock + j * BLOCK_SIZE);
-            colB2 = _mm256_load_pd(BBlock + 4 + j * BLOCK_SIZE);
-            colB3 = _mm256_load_pd(BBlock + 8 + j * BLOCK_SIZE);
-            colB4 = _mm256_load_pd(BBlock + 12 + j * BLOCK_SIZE);
+//            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
+//            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
+//            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
+//            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
+//            colB1 = _mm256_load_pd(BBlock + j * BLOCK_SIZE);
+//            colB2 = _mm256_load_pd(BBlock + 4 + j * BLOCK_SIZE);
+//            colB3 = _mm256_load_pd(BBlock + 8 + j * BLOCK_SIZE);
+//            colB4 = _mm256_load_pd(BBlock + 12 + j * BLOCK_SIZE);
+            rowA1 = _mm256_load_pd(A + i * ldaRounded);
+            rowA2 = _mm256_load_pd(A + 4 + i * ldaRounded);
+            rowA3 = _mm256_load_pd(A + 8 + i * ldaRounded);
+            rowA4 = _mm256_load_pd(A + 12 + i * ldaRounded);
+            colB1 = _mm256_load_pd(B + j * ldaRounded);
+            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
+            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
+            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
             __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
@@ -87,10 +95,10 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
             _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
             double cij = C[i + j * lda];
-            for (int k = 0; k < 4; k++) {
+            for (int k = 0; k < 4; ++k) {
                 cij += dotProduct[k];
             }
-            C[i + j * lda] += cij;
+            C[i + j * lda] = cij;
         }
     }
 //    free(AT);
@@ -110,7 +118,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
     double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
-    printf("LDA rounded: %d \n", ldaRounded);
+//    printf("LDA rounded: %d \n", ldaRounded);
 
 //    printf("A: \n");
 //    // For each row i of AT
@@ -148,6 +156,24 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         }
     }
 
+    // For each block-column of AAligned
+    for (int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
+        // For each block-column of BAligned
+        for (int bj = 0; bj < ldaRounded; bj += BLOCK_SIZE) {
+            // Accumulate block dgemms into block of C
+            for (int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
+//                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
+                // Correct block dimensions if block "goes off edge of" the matrix
+                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
+                int M = min(BLOCK_SIZE, lda - bi);
+                int N = min(BLOCK_SIZE, lda - bj);
+                int K = min(BLOCK_SIZE, lda - bk);
+                // Perform individual block dgemm
+                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
+            }
+        }
+    }
+
 //    printf("AAligned: \n");
 //    // For each row i of AT
 //    for (unsigned int i = 0; i < ldaRounded; ++i) {
@@ -168,23 +194,23 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //        printf("\n");
 //    }
 
-    // For each block-row of A
-    for (int i = 0; i < lda; i += BLOCK_SIZE) {
-        // For each block-column of B
-        for (int j = 0; j < lda; j += BLOCK_SIZE) {
-            // Accumulate block dgemms into block of C
-            for (int k = 0; k < lda; k += BLOCK_SIZE) {
-//                printf("i = %d, j = %d, k = %d", i, j ,k);
-                // Correct block dimensions if block "goes off edge of" the matrix
-                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-                int M = min(BLOCK_SIZE, lda - i);
-                int N = min(BLOCK_SIZE, lda - j);
-                int K = min(BLOCK_SIZE, lda - k);
-                // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, i, j, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
-           }
-        }
-    }
+//    // For each block-row of A
+//    for (int i = 0; i < lda; i += BLOCK_SIZE) {
+//        // For each block-column of B
+//        for (int j = 0; j < lda; j += BLOCK_SIZE) {
+//            // Accumulate block dgemms into block of C
+//            for (int k = 0; k < lda; k += BLOCK_SIZE) {
+////                printf("i = %d, j = %d, k = %d", i, j ,k);
+//                // Correct block dimensions if block "goes off edge of" the matrix
+//                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
+//                int M = min(BLOCK_SIZE, lda - i);
+//                int N = min(BLOCK_SIZE, lda - j);
+//                int K = min(BLOCK_SIZE, lda - k);
+//                // Perform individual block dgemm
+//                do_block(lda, ldaRounded, M, N, K, i, j, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
+//           }
+//        }
+//    }
     free(AT);
     free(dotProduct);
     free(BBlock);
