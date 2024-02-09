@@ -122,8 +122,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 
     // round lda up to the nearest BLOCK_SIZE multiple
     int ldaRounded = lda % BLOCK_SIZE == 0 ? lda : lda + (BLOCK_SIZE - (lda % BLOCK_SIZE));
-    double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
-    double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
+    double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 32);
+    double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 32);
 
     double* AAlignedPacked = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
