@@ -75,18 +75,18 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
         for (int j = 0; j < N; ++j) {
             // Compute C(i,j)
 //            AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded]
-            rowA1 = _mm256_load_pd(A + i * K);
-            rowA2 = _mm256_load_pd(A + 4 + i * K);
-            rowA3 = _mm256_load_pd(A + 8 + i * K);
-            rowA4 = _mm256_load_pd(A + 12 + i * K);
+//            rowA1 = _mm256_load_pd(A + i * K);
+//            rowA2 = _mm256_load_pd(A + 4 + i * K);
+//            rowA3 = _mm256_load_pd(A + 8 + i * K);
+//            rowA4 = _mm256_load_pd(A + 12 + i * K);
 //            colB1 = _mm256_load_pd(B + j * ldaRounded);
 //            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
 //            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
 //            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
-//            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
-//            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
-//            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
-//            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
+            rowA1 = _mm256_load_pd(A + i * ldaRounded);
+            rowA2 = _mm256_load_pd(A + 4 + i * ldaRounded);
+            rowA3 = _mm256_load_pd(A + 8 + i * ldaRounded);
+            rowA4 = _mm256_load_pd(A + 12 + i * ldaRounded);
             colB1 = _mm256_load_pd(B + j * ldaRounded);
             colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
             colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
@@ -203,8 +203,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
                 int K = min(BLOCK_SIZE, ldaRounded - bk);
                 // AAlignedPacked + bk * M * K + bi * M * ldaRounded
                 // Perform individual block dgemm
-//                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
-                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAlignedPacked + bk * M * K + bi * M * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
+                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
+//                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAlignedPacked + bk * M * K + bi * M * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
             }
         }
     }
