@@ -138,7 +138,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
                 int N = min(BLOCK_SIZE, lda - j);
                 int K = min(BLOCK_SIZE, lda - k);
                 // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
+                do_block(lda, ldaRounded, M, N, K, i, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
            }
         }
     }
