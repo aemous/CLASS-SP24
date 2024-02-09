@@ -163,7 +163,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     for (unsigned int i = 0; i < ldaRounded; ++i) {
         // For each column j of BAligned
         for (unsigned int j = 0; j < ldaRounded; ++j) {
-            printf("%f ", BAligned[i + j * lda]);
+            printf("%f ", BAligned[i + j * ldaRounded]);
         }
         printf("\n");
     }
