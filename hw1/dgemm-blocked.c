@@ -3,8 +3,7 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef BLOCK_SIZE
-//#define BLOCK_SIZE 16
-#define BLOCK_SIZE 4
+#define BLOCK_SIZE 16
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -17,10 +16,24 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  */
 static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
-    __m256d rowA1; // stores first half of row i of A
-//    __m256d rowA2; // stores second half of row i of A
-    __m256d colB1; // stores first half of column j of B
-//    __m256d colB2; // stores second half of column j of B
+    __m256d rowA1; // stores first quarter of row i of A
+    __m256d rowA2; // stores second quarter of row i of A
+    __m256d rowA3; // stores third quarter of row i of A
+    __m256d rowA4; // stores fourth quarter of row i of A
+    __m256d colB1; // stores first quarter of column j of B
+    __m256d colB2; // stores second quarter of column j of B
+    __m256d colB3; // stores third quarter of column j of B
+    __m256d colB4; // stores fourth quarter of column j of B
+
+    // Obtain a block-contiguous view on AT
+    // For each column of AT-block
+    for (unsigned int j = 0; j < M; ++j) {
+        // For each row of AT-block
+        for (unsigned int i = 0; i < K; ++i) {
+            // Copy the element to AT
+            AT[i + j * BLOCK_SIZE] = A[i + j * ldaRounded];
+        }
+    }
 
     // transpose the A-block for SIMD-compatibility
     // For each column j of AT
@@ -61,38 +74,30 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
         // For each column j of B
         for (int j = 0; j < N; ++j) {
             // Compute C(i,j)
-            // TODO if we get correctness error, it might be due to the case that the block is smaller than BLOCK_SIZE
-//            rowA1 = _mm256_load_pd(AT + i * K);
-//            rowA2 = _mm256_load_pd(AT + 4 + i * K);
-//            rowA3 = _mm256_load_pd(AT + 8 + i * K);
-//            rowA4 = _mm256_load_pd(AT + 12 + i * K);
-
-//            rowA1 = _mm256_load_pd(AT + i * BLOCK_SIZE);
-//            rowA2 = _mm256_load_pd(AT + 4 + i * BLOCK_SIZE);
-//            rowA3 = _mm256_load_pd(AT + 8 + i * BLOCK_SIZE);
-//            rowA4 = _mm256_load_pd(AT + 12 + i * BLOCK_SIZE);
-//            colB1 = _mm256_load_pd(BBlock + j * BLOCK_SIZE);
-//            colB2 = _mm256_load_pd(BBlock + 4 + j * BLOCK_SIZE);
-//            colB3 = _mm256_load_pd(BBlock + 8 + j * BLOCK_SIZE);
-//            colB4 = _mm256_load_pd(BBlock + 12 + j * BLOCK_SIZE);
-            rowA1 = _mm256_load_pd(A + i * ldaRounded);
+//            rowA1 = _mm256_load_pd(A + i * ldaRounded);
 //            rowA2 = _mm256_load_pd(A + 4 + i * ldaRounded);
 //            rowA3 = _mm256_load_pd(A + 8 + i * ldaRounded);
 //            rowA4 = _mm256_load_pd(A + 12 + i * ldaRounded);
-            colB1 = _mm256_load_pd(B + j * ldaRounded);
+//            colB1 = _mm256_load_pd(B + j * ldaRounded);
 //            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
 //            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
 //            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
+            rowA1 = _mm256_load_pd(AT + i * ldaRounded);
+            rowA2 = _mm256_load_pd(AT + 4 + i * ldaRounded);
+            rowA3 = _mm256_load_pd(AT + 8 + i * ldaRounded);
+            rowA4 = _mm256_load_pd(AT + 12 + i * ldaRounded);
+            colB1 = _mm256_load_pd(B + j * ldaRounded);
+            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
+            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
+            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
-            __m256d dot1 = _mm256_mul_pd(rowA1, colB1);
+            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
             // compute second 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
+            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
 //
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
-//            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
-            _mm256_store_pd(dotProduct, dot1);
+            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
             double cij = C[i + j * lda];
             for (int k = 0; k < 4; ++k) {
                 cij += dotProduct[k];
@@ -210,6 +215,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //           }
 //        }
 //    }
+
     free(AT);
     free(dotProduct);
     free(BBlock);
