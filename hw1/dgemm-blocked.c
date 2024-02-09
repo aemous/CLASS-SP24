@@ -110,6 +110,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
     double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
+    printf("LDA rounded: %d", ldaRounded);
+
     // TODO one might consider transposing A right now (instead of per-block) and compare performance
     // copy A to AAligned, pad with zeros
     for (unsigned int i = 0; i < ldaRounded; ++i) {
