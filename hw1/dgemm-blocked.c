@@ -5,7 +5,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 
 // Define micro-block (kernel) size
 #ifndef BI_SIZE
-#define BI_SIZE 2
+#define BI_SIZE 4
 #endif
 
 // TODO utilize this for higher-level block
@@ -136,36 +136,54 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     repack_row_major(lda, 4, A, A_repacked);
     repack_col_major(lda, 4, B, B_repacked);
 
-    printf("B: \n");
-    // For each row i of A
-    for (unsigned int i = 0; i < lda; ++i) {
-        // For each column j of A
-        for (unsigned int j = 0; j < lda; ++j) {
-            printf("%f ", B[i + j * lda]);
-        }
-        printf("\n");
-    }
+    // TODO move these indices to the lowest level we can
+    int B_idx = 0;
+    int end_of_last_B_block = 0;
+    int end_of_last_B_col = 0;
 
-    printf("B repacked: \n");
-    for (unsigned int i = 0; i < lda * lda; ++i) {
-        printf("%f \n", B_repacked[i]);
-    }
 
     // TODO implement a higher-level block size above the micro-level
     // For each block column bj of B
     for (unsigned int bj = 0; bj < lda; bj += BI_SIZE) {
+        int A_idx = 0;
+        int end_of_last_A_block = 0;
         // For each block row bi of A
         for (unsigned int bi = 0; bi < lda; bi += BI_SIZE) {
             // Accumulate block dgemms into block of C
             for (unsigned int bk = 0; bk < lda; bk += BI_SIZE) {
                 // Correct block dimensions if block "goes off edge of" the matrix
-                int M = min(BLOCK_SIZE, lda - bi);
-                int N = min(BLOCK_SIZE, lda - bj);
-                int K = min(BLOCK_SIZE, lda - bk);
-                do_micro_block(lda, M, N, K, bj, bi, bk, A, B, C, A_block, B_block, C_block);
+                int M = min(BI_SIZE, lda - bi);
+                int N = min(BI_SIZE, lda - bj);
+                int K = min(BI_SIZE, lda - bk);
+                // todo worry about extracting to helper later
+//                do_micro_block(lda, M, N, K, bj, bi, bk, A, B, C, A_block, B_block, C_block);
+
+                // For each column j of B-block
+                for (int j = 0; j < N; ++j) {
+                    A_idx = end_of_last_A_block; // should be the start of the current A-block
+                    // For each row i of A-block
+                    for (int i = 0; i < M; ++i) {
+                        B_idx = end_of_last_B_col;
+                        // Compute C(i,j)
+                        double cij = C[bi + i + (bj + j) * lda];
+
+                        for (int k = 0; k < K; ++k) {
+                            cij += A_repacked[A_idx] * B_repacked[B_idx];
+//                            cij += A[i + k * lda] * B[k + j * lda];
+                            A_idx++;
+                            B_idx++;
+                        }
+                        C[bi + i + (bj + j) * lda] = cij;
+                    }
+                    end_of_last_B_col = B_idx;
+                }
+                // set end_of_last_A_block, since at this point we reached the end of prev A_block
+                end_of_last_A_block = A_idx;
             }
         }
     }
+
+//    A_block is M-by-K, B_block is K-by-N
 
     free(A_block);
     free(B_block);
@@ -173,18 +191,18 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //    free(A_repacked);
 
     // For each block-row of A
-    for (int i = 0; i < lda; i += BLOCK_SIZE) {
-        // For each block-column of B
-        for (int j = 0; j < lda; j += BLOCK_SIZE) {
-            // Accumulate block dgemms into block of C
-            for (int k = 0; k < lda; k += BLOCK_SIZE) {
-                // Correct block dimensions if block "goes off edge of" the matrix
-                int M = min(BLOCK_SIZE, lda - i);
-                int N = min(BLOCK_SIZE, lda - j);
-                int K = min(BLOCK_SIZE, lda - k);
-                // Perform individual block dgemm
-                do_block(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
-            }
-        }
-    }
+//    for (int i = 0; i < lda; i += BLOCK_SIZE) {
+//        // For each block-column of B
+//        for (int j = 0; j < lda; j += BLOCK_SIZE) {
+//            // Accumulate block dgemms into block of C
+//            for (int k = 0; k < lda; k += BLOCK_SIZE) {
+//                // Correct block dimensions if block "goes off edge of" the matrix
+//                int M = min(BLOCK_SIZE, lda - i);
+//                int N = min(BLOCK_SIZE, lda - j);
+//                int K = min(BLOCK_SIZE, lda - k);
+//                // Perform individual block dgemm
+//                do_block(lda, M, N, K, A + i + k * lda, B + k + j * lda, C + i + j * lda);
+//            }
+//        }
+//    }
 }
