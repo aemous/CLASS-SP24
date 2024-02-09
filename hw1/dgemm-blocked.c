@@ -122,8 +122,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 
     // round lda up to the nearest BLOCK_SIZE multiple
     int ldaRounded = lda % BLOCK_SIZE == 0 ? lda : lda + (BLOCK_SIZE - (lda % BLOCK_SIZE));
-    double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 32);
-    double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 32);
+    double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
+    double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
     double* AAlignedPacked = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
@@ -171,13 +171,13 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         // For each block in this column
         for (unsigned int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
             // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-            int M = min(BLOCK_SIZE, ldaRounded - bi);
-            int K = min(BLOCK_SIZE, ldaRounded - bk);
+            int M = min(BLOCK_SIZE, lda - bi);
+            int K = min(BLOCK_SIZE, lda - bk);
             // For each column of the current block
             for (unsigned int j = 0; j < M; ++j) {
                 // For each row of the current block
                 for (unsigned int i = 0; i < K; ++i) {
-//                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
+                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
                     // sanity check: max value is BLOCK_SIZE-1 + (BLOCK_SIZE-1) * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * ldaRounded
                     // -1 + BLOCK_SIZE^2(1 - ldaRounded) + ldaRounded*BLOCK_SIZE^3 - BLOCK_SIZE^4 + ldaRounded^2*BLOCK_SIZE
                     // the sanity c heck too hard, lets just run
