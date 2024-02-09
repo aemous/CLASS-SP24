@@ -110,7 +110,18 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
     double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
-    printf("LDA rounded: %d", ldaRounded);
+    printf("LDA rounded: %d \n", ldaRounded);
+
+    printf("A: \n");
+    // For each row i of AT
+    for (unsigned int i = 0; i < lda; ++i) {
+        // For each column j of AT
+        for (unsigned int j = 0; j < lda; ++j) {
+            printf("%f ", AT[i + j * lda]);
+        }
+        printf("\n");
+    }
+
 
     // TODO one might consider transposing A right now (instead of per-block) and compare performance
     // copy A to AAligned, pad with zeros
@@ -125,6 +136,16 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         for (unsigned int j = 0; j < ldaRounded; ++j) {
             BAligned[i + j * ldaRounded] = i < lda && j < lda ? B[i + j * lda] : 0;
         }
+    }
+
+    printf("AAligned: \n");
+    // For each row i of AT
+    for (unsigned int i = 0; i < ldaRounded; ++i) {
+        // For each column j of AT
+        for (unsigned int j = 0; j < ldaRounded; ++j) {
+            printf("%f ", AAligned[i + j * ldaRounded]);
+        }
+        printf("\n");
     }
 
     // For each block-row of A
