@@ -177,7 +177,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
             for (unsigned int j = 0; j < M; ++j) {
                 // For each row of the current block
                 for (unsigned int i = 0; i < K; ++i) {
-                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
+//                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
                     // sanity check: max value is BLOCK_SIZE-1 + (BLOCK_SIZE-1) * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * ldaRounded
                     // -1 + BLOCK_SIZE^2(1 - ldaRounded) + ldaRounded*BLOCK_SIZE^3 - BLOCK_SIZE^4 + ldaRounded^2*BLOCK_SIZE
                     // the sanity c heck too hard, lets just run
