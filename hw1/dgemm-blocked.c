@@ -112,25 +112,25 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 
     printf("LDA rounded: %d \n", ldaRounded);
 
-    printf("A: \n");
-    // For each row i of AT
-    for (unsigned int i = 0; i < lda; ++i) {
-        // For each column j of AT
-        for (unsigned int j = 0; j < lda; ++j) {
-            printf("%f ", A[i + j * lda]);
-        }
-        printf("\n");
-    }
-
-    printf("B: \n");
-    // For each row i of B
-    for (unsigned int i = 0; i < lda; ++i) {
-        // For each column j of AT
-        for (unsigned int j = 0; j < lda; ++j) {
-            printf("%f ", B[i + j * lda]);
-        }
-        printf("\n");
-    }
+//    printf("A: \n");
+//    // For each row i of AT
+//    for (unsigned int i = 0; i < lda; ++i) {
+//        // For each column j of AT
+//        for (unsigned int j = 0; j < lda; ++j) {
+//            printf("%f ", A[i + j * lda]);
+//        }
+//        printf("\n");
+//    }
+//
+//    printf("B: \n");
+//    // For each row i of B
+//    for (unsigned int i = 0; i < lda; ++i) {
+//        // For each column j of AT
+//        for (unsigned int j = 0; j < lda; ++j) {
+//            printf("%f ", B[i + j * lda]);
+//        }
+//        printf("\n");
+//    }
 
 
     // TODO one might consider transposing A right now (instead of per-block) and compare performance
@@ -148,25 +148,25 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         }
     }
 
-    printf("AAligned: \n");
-    // For each row i of AT
-    for (unsigned int i = 0; i < ldaRounded; ++i) {
-        // For each column j of AT
-        for (unsigned int j = 0; j < ldaRounded; ++j) {
-            printf("%f ", AAligned[i + j * ldaRounded]);
-        }
-        printf("\n");
-    }
-
-    printf("BAligned: \n");
-    // For each row i of BAligned
-    for (unsigned int i = 0; i < ldaRounded; ++i) {
-        // For each column j of BAligned
-        for (unsigned int j = 0; j < ldaRounded; ++j) {
-            printf("%f ", BAligned[i + j * ldaRounded]);
-        }
-        printf("\n");
-    }
+//    printf("AAligned: \n");
+//    // For each row i of AT
+//    for (unsigned int i = 0; i < ldaRounded; ++i) {
+//        // For each column j of AT
+//        for (unsigned int j = 0; j < ldaRounded; ++j) {
+//            printf("%f ", AAligned[i + j * ldaRounded]);
+//        }
+//        printf("\n");
+//    }
+//
+//    printf("BAligned: \n");
+//    // For each row i of BAligned
+//    for (unsigned int i = 0; i < ldaRounded; ++i) {
+//        // For each column j of BAligned
+//        for (unsigned int j = 0; j < ldaRounded; ++j) {
+//            printf("%f ", BAligned[i + j * ldaRounded]);
+//        }
+//        printf("\n");
+//    }
 
     // For each block-row of A
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
