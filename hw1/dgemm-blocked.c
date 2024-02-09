@@ -169,6 +169,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 
                         for (int k = 0; k < K; ++k) {
                             cij += A_repacked[A_idx] * B_repacked[B_idx];
+                            printf("Performed multiplication. a_idx = %d , b_idx = %d", A_idx, B_idx);
 //                            cij += A[i + k * lda] * B[k + j * lda];
                             A_idx++;
                             B_idx++;
