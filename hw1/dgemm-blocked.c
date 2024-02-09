@@ -90,8 +90,29 @@ void repack_row_major(int lda, int blockSize, double* A, double* B) {
             for (unsigned int i = 0; i < min(blockSize, lda - bi); ++i) {
                 // For each column of the block
                 for (unsigned int k = 0; k < min(blockSize, lda - bk); ++k) {
-                    printf("bi %d, bk %d, i %d, k%d \n", bi, bk, i, k);
                     B[idx] = A[bi + i + (bk + k) * lda];
+                    idx++;
+                }
+            }
+        }
+    }
+}
+
+/*
+ * Assuming A and B are ldaxlda matrices, repack A into B. Repacks so that contiguous col-major blockSize elements are
+ * adjacent in memory.
+ */
+void repack_col_major(int lda, int blockSize, double* A, double* B) {
+    unsigned int idx = 0;
+    // For each block column of A
+    for (unsigned int bj = 0; bj < lda; bj += blockSize) {
+        // For each block row of A
+        for (unsigned int bk = 0; bk < lda; bk += blockSize) {
+            // For each column of the block
+            for (unsigned int j = 0; j < min(blockSize, lda - bj); ++j) {
+                // For each row of the block
+                for (unsigned int k = 0; k < min(blockSize, lda - bk); ++k) {
+                    B[idx] = A[bk + k + (bj + j) * lda];
                     idx++;
                 }
             }
@@ -109,23 +130,25 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     double* C_block = _mm_malloc(BI_SIZE * BI_SIZE * sizeof(double), 64);
 
 //    double* A_repacked = _mm_malloc(lda * lda * sizeof(double), 64); // TODO experiment with 32 instead
-    double A_repacked[lda * lda]; // TODO experiment with 32 instead
+    double A_repacked[lda * lda];
+    double B_repacked[lda * lda];
 
     repack_row_major(lda, 4, A, A_repacked);
+    repack_col_major(lda, 4, B, B_repacked);
 
-    printf("A: \n");
+    printf("B: \n");
     // For each row i of A
     for (unsigned int i = 0; i < lda; ++i) {
         // For each column j of A
         for (unsigned int j = 0; j < lda; ++j) {
-            printf("%f ", A[i + j * lda]);
+            printf("%f ", B[i + j * lda]);
         }
         printf("\n");
     }
 
-    printf("A repacked: \n");
+    printf("B repacked: \n");
     for (unsigned int i = 0; i < lda * lda; ++i) {
-        printf("%f \n", A_repacked[i]);
+        printf("%f \n", B_repacked[i]);
     }
 
     // TODO implement a higher-level block size above the micro-level
