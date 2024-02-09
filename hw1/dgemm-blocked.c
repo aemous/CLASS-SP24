@@ -171,8 +171,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         // For each block in this column
         for (unsigned int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
             // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-            int M = min(BLOCK_SIZE, lda - bi);
-            int K = min(BLOCK_SIZE, lda - bk);
+            int M = min(BLOCK_SIZE, ldaRounded - bi);
+            int K = min(BLOCK_SIZE, ldaRounded - bk);
             // For each column of the current block
             for (unsigned int j = 0; j < M; ++j) {
                 // For each row of the current block
@@ -195,9 +195,13 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
                 // Correct block dimensions if block "goes off edge of" the matrix
                 // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-                int M = min(BLOCK_SIZE, lda - bi);
-                int N = min(BLOCK_SIZE, lda - bj);
-                int K = min(BLOCK_SIZE, lda - bk);
+//                int M = min(BLOCK_SIZE, lda - bi);
+//                int N = min(BLOCK_SIZE, lda - bj);
+//                int K = min(BLOCK_SIZE, lda - bk);
+                int M = min(BLOCK_SIZE, ldaRounded - bi);
+                int N = min(BLOCK_SIZE, ldaRounded - bj);
+                int K = min(BLOCK_SIZE, ldaRounded - bk);
+                // AAlignedPacked + bk * M * K + bi * M * ldaRounded
                 // Perform individual block dgemm
 //                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
                 do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAlignedPacked + bk * M * K + bi * M * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
