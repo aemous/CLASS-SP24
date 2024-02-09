@@ -12,8 +12,9 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
+ * bi is the block-row of A. bk is the block number (of A and B).
  */
-static void do_block(int lda, int ldaRounded, int M, int N, int K, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
+static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
@@ -36,7 +37,7 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, double* A, do
     for (unsigned int j = 0; j < M; ++j) {
         // For each row i of AT
         for (unsigned int i = 0; i < K; ++i) {
-            AT[i + j * K] = A[j + i * ldaRounded];
+            AT[i + j * K] = A[j + bk + (i + bi) * ldaRounded];
 //            if (i < K && j < M) {
 //                AT[i + j * BLOCK_SIZE] = A[j + i * lda];
 //            } else {
