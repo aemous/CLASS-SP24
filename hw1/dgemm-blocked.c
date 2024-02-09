@@ -117,7 +117,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     for (unsigned int i = 0; i < lda; ++i) {
         // For each column j of AT
         for (unsigned int j = 0; j < lda; ++j) {
-            printf("%f ", AT[i + j * lda]);
+            printf("%f ", A[i + j * lda]);
         }
         printf("\n");
     }
