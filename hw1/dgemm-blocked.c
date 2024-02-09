@@ -122,6 +122,16 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         printf("\n");
     }
 
+    printf("B: \n");
+    // For each row i of B
+    for (unsigned int i = 0; i < lda; ++i) {
+        // For each column j of AT
+        for (unsigned int j = 0; j < lda; ++j) {
+            printf("%f ", B[i + j * lda]);
+        }
+        printf("\n");
+    }
+
 
     // TODO one might consider transposing A right now (instead of per-block) and compare performance
     // copy A to AAligned, pad with zeros
@@ -144,6 +154,16 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
         // For each column j of AT
         for (unsigned int j = 0; j < ldaRounded; ++j) {
             printf("%f ", AAligned[i + j * ldaRounded]);
+        }
+        printf("\n");
+    }
+
+    printf("BAligned: \n");
+    // For each row i of BAligned
+    for (unsigned int i = 0; i < lda; ++i) {
+        // For each column j of BAligned
+        for (unsigned int j = 0; j < lda; ++j) {
+            printf("%f ", BAligned[i + j * lda]);
         }
         printf("\n");
     }
