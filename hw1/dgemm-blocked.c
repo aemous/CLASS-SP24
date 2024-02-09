@@ -107,7 +107,9 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     double* B_block = _mm_malloc(BI_SIZE * BI_SIZE * sizeof(double), 64);
     double* C_block = _mm_malloc(BI_SIZE * BI_SIZE * sizeof(double), 64);
 
-    double* A_repacked = _mm_malloc(lda * lda * sizeof(double), 64); // TODO experiment with 32 instead
+//    double* A_repacked = _mm_malloc(lda * lda * sizeof(double), 64); // TODO experiment with 32 instead
+    double A_repacked[lda * lda]; // TODO experiment with 32 instead
+
     repack_row_major(lda, 4, A, A_repacked);
 
     printf("A: \n");
@@ -144,7 +146,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     free(A_block);
     free(B_block);
     free(C_block);
-    free(A_repacked);
+//    free(A_repacked);
 
     // For each block-row of A
     for (int i = 0; i < lda; i += BLOCK_SIZE) {
