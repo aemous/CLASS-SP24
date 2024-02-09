@@ -87,9 +87,10 @@ void repack_row_major(int lda, int blockSize, double* A, double* B) {
         // For each block column of A
         for (unsigned int bk = 0; bk < lda; bk += blockSize) {
             // For each row of the block
-            for (unsigned int i = 0; i < blockSize; ++i) {
+            for (unsigned int i = 0; i < min(blockSize, lda - bi); ++i) {
                 // For each column of the block
-                for (unsigned int k = 0; k < min(blockSize, lda - bi); ++k) {
+                for (unsigned int k = 0; k < min(blockSize, lda - bk); ++k) {
+                    printf("bi %d, bk %d, i %d, k%d \n", bi, bk, i, k);
                     B[idx] = A[bi + i + (bk + k) * lda];
                     idx++;
                 }
