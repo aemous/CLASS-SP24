@@ -12,9 +12,9 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * This auxiliary subroutine performs a smaller dgemm operation
  *  C := C + A * B
  * where C is M-by-N, A is M-by-K, and B is K-by-N.
- * bi is the block-row of A. bk is the block number (of A and B).
+ * bi is the block-row of A. bj is the block-column of B, bk is the block number (of A and B).
  */
-static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
+static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
@@ -53,7 +53,7 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 
     for (unsigned int j = 0; j < N; ++j) {
         for (unsigned int i = 0; i < K; ++i) {
-            BBlock[i + j * K] = B[i + j * ldaRounded];
+            BBlock[i + j * K] = B[i + bk + (j + bj) * ldaRounded];
         }
     }
 
@@ -138,7 +138,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
                 int N = min(BLOCK_SIZE, lda - j);
                 int K = min(BLOCK_SIZE, lda - k);
                 // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, i, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
+                do_block(lda, ldaRounded, M, N, K, i, j, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
            }
         }
     }
