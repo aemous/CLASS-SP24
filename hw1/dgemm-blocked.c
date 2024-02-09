@@ -127,7 +127,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     // copy A to AAligned, pad with zeros
     for (unsigned int i = 0; i < ldaRounded; ++i) {
         for (unsigned int j = 0; j < ldaRounded; ++j) {
-            AAligned[i + j * ldaRounded] = i < lda && j < lda ? A[i + j * lda] : 0;
+            AAligned[i + j * ldaRounded] = i < lda && j < lda ? A[j + i * lda] : 0;
         }
     }
 
