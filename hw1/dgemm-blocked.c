@@ -195,9 +195,9 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
                 // Correct block dimensions if block "goes off edge of" the matrix
                 // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-                int M = min(BLOCK_SIZE, ldaRounded - bi);
-                int N = min(BLOCK_SIZE, ldaRounded - bj);
-                int K = min(BLOCK_SIZE, ldaRounded - bk);
+                int M = min(BLOCK_SIZE, lda - bi);
+                int N = min(BLOCK_SIZE, lda - bj);
+                int K = min(BLOCK_SIZE, lda - bk);
 //                int M = min(BLOCK_SIZE, ldaRounded - bi);
 //                int N = min(BLOCK_SIZE, ldaRounded - bj);
 //                int K = min(BLOCK_SIZE, ldaRounded - bk);
