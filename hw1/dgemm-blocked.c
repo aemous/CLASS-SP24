@@ -167,24 +167,24 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     // TODO one might consider doing the transpose and padding and packing all in one loop
     // Repack AAligned to AAlignedPacked
     // For each block-column of AAligned
-    for (unsigned int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
-        // For each block in this column
-        for (unsigned int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
-            // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
-            int M = min(BLOCK_SIZE, ldaRounded - bi);
-            int K = min(BLOCK_SIZE, ldaRounded - bk);
-            // For each column of the current block
-            for (unsigned int j = 0; j < M; ++j) {
-                // For each row of the current block
-                for (unsigned int i = 0; i < K; ++i) {
-                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
-                    // sanity check: max value is BLOCK_SIZE-1 + (BLOCK_SIZE-1) * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * ldaRounded
-                    // -1 + BLOCK_SIZE^2(1 - ldaRounded) + ldaRounded*BLOCK_SIZE^3 - BLOCK_SIZE^4 + ldaRounded^2*BLOCK_SIZE
-                    // the sanity c heck too hard, lets just run
-                }
-            }
-        }
-    }
+//    for (unsigned int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
+//        // For each block in this column
+//        for (unsigned int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
+//            // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
+//            int M = min(BLOCK_SIZE, ldaRounded - bi);
+//            int K = min(BLOCK_SIZE, ldaRounded - bk);
+//            // For each column of the current block
+//            for (unsigned int j = 0; j < M; ++j) {
+//                // For each row of the current block
+//                for (unsigned int i = 0; i < K; ++i) {
+//                    AAlignedPacked[i + j * K + bk * M * K + bi * M * ldaRounded] = AAligned[bk + i + (bi + j) * ldaRounded];
+//                    // sanity check: max value is BLOCK_SIZE-1 + (BLOCK_SIZE-1) * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * BLOCK_SIZE + (ldaRounded - BLOCK_SIZE) * BLOCK_SIZE * ldaRounded
+//                    // -1 + BLOCK_SIZE^2(1 - ldaRounded) + ldaRounded*BLOCK_SIZE^3 - BLOCK_SIZE^4 + ldaRounded^2*BLOCK_SIZE
+//                    // the sanity c heck too hard, lets just run
+//                }
+//            }
+//        }
+//    }
 
     // For each block-column of AAligned
     for (int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
