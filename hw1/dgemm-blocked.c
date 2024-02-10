@@ -7,7 +7,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #endif
 
 #ifndef B2_SIZE
-#define B2_SIZE 16
+#define B2_SIZE 32
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
