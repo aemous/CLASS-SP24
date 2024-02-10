@@ -3,11 +3,11 @@
 const char* dgemm_desc = "Simple blocked dgemm.";
 
 #ifndef B1_SIZE
-#define B1_SIZE 4
+#define B1_SIZE 16
 #endif
 
 #ifndef B2_SIZE
-#define B2_SIZE 16
+#define B2_SIZE 32
 #endif
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
@@ -21,13 +21,13 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct) {
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
-//    __m256d rowA2; // stores second quarter of row i of A
-//    __m256d rowA3; // stores third quarter of row i of A
-//    __m256d rowA4; // stores fourth quarter of row i of A
+    __m256d rowA2; // stores second quarter of row i of A
+    __m256d rowA3; // stores third quarter of row i of A
+    __m256d rowA4; // stores fourth quarter of row i of A
     __m256d colB1; // stores first quarter of column j of B
-//    __m256d colB2; // stores second quarter of column j of B
-//    __m256d colB3; // stores third quarter of column j of B
-//    __m256d colB4; // stores fourth quarter of column j of B
+    __m256d colB2; // stores second quarter of column j of B
+    __m256d colB3; // stores third quarter of column j of B
+    __m256d colB4; // stores fourth quarter of column j of B
 
     // Obtain a block-contiguous view on AT
     // For each column of AT-block
@@ -88,23 +88,23 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
 //            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
 //            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
             rowA1 = _mm256_load_pd(A + i * ldaRounded);
-//            rowA2 = _mm256_load_pd(A + 4 + i * ldaRounded);
-//            rowA3 = _mm256_load_pd(A + 8 + i * ldaRounded);
-//            rowA4 = _mm256_load_pd(A + 12 + i * ldaRounded);
+            rowA2 = _mm256_load_pd(A + 4 + i * ldaRounded);
+            rowA3 = _mm256_load_pd(A + 8 + i * ldaRounded);
+            rowA4 = _mm256_load_pd(A + 12 + i * ldaRounded);
             colB1 = _mm256_load_pd(B + j * ldaRounded);
-//            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
-//            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
-//            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
+            colB2 = _mm256_load_pd(B + 4 + j * ldaRounded);
+            colB3 = _mm256_load_pd(B + 8 + j * ldaRounded);
+            colB4 = _mm256_load_pd(B + 12 + j * ldaRounded);
 
             // compute first 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
-            __m256d dot1 = _mm256_mul_pd(rowA1, colB1);
+            __m256d dot1 = _mm256_hadd_pd(_mm256_mul_pd(rowA1, colB1), _mm256_mul_pd(rowA2, colB2));
+//            __m256d dot1 = _mm256_mul_pd(rowA1, colB1);
             // compute second 'half' of the dot product of A[i,:] and B[:,j]
-//            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
+            __m256d dot2 = _mm256_hadd_pd(_mm256_mul_pd(rowA3, colB3), _mm256_mul_pd(rowA4, colB4));
 //
 //            // the sum of the 4 doubles in the vector below is the dot product of A[i,:] and B[:,j]
-//            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
-            _mm256_store_pd(dotProduct, dot1);
+            _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
+//            _mm256_store_pd(dotProduct, dot1);
             double cij = C[i + j * lda];
             for (unsigned int k = 0; k < 4; ++k) {
                 cij += dotProduct[k];
@@ -235,44 +235,6 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
             }
         }
     }
-
-//    printf("AAligned: \n");
-//    // For each row i of AT
-//    for (unsigned int i = 0; i < ldaRounded; ++i) {
-//        // For each column j of AT
-//        for (unsigned int j = 0; j < ldaRounded; ++j) {
-//            printf("%f ", AAligned[i + j * ldaRounded]);
-//        }
-//        printf("\n");
-//    }
-//
-//    printf("BAligned: \n");
-//    // For each row i of BAligned
-//    for (unsigned int i = 0; i < ldaRounded; ++i) {
-//        // For each column j of BAligned
-//        for (unsigned int j = 0; j < ldaRounded; ++j) {
-//            printf("%f ", BAligned[i + j * ldaRounded]);
-//        }
-//        printf("\n");
-//    }
-
-//    // For each block-row of A
-//    for (int i = 0; i < lda; i += B1_SIZE) {
-//        // For each block-column of B
-//        for (int j = 0; j < lda; j += B1_SIZE) {
-//            // Accumulate block dgemms into block of C
-//            for (int k = 0; k < lda; k += B1_SIZE) {
-////                printf("i = %d, j = %d, k = %d", i, j ,k);
-//                // Correct block dimensions if block "goes off edge of" the matrix
-//                // TODO theoretically we don't need min since padding guarantees it's a multiple of B1_SIZE
-//                int M = min(B1_SIZE, lda - i);
-//                int N = min(B1_SIZE, lda - j);
-//                int K = min(B1_SIZE, lda - k);
-//                // Perform individual block dgemm
-//                do_block(lda, ldaRounded, M, N, K, i, j, k, AAligned + i + k * ldaRounded, BAligned + k + j * ldaRounded, C + i + j * lda, dotProduct, AT, BBlock);
-//           }
-//        }
-//    }
 
     free(dotProduct);
     free(AAligned);
