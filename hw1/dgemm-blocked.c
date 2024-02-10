@@ -6,6 +6,10 @@ const char* dgemm_desc = "Simple blocked dgemm.";
 #define BLOCK_SIZE 16
 #endif
 
+#ifndef B2_SIZE
+#define B2_SIZE 32
+#endif
+
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 
 /*
@@ -102,7 +106,7 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
             _mm256_store_pd(dotProduct, _mm256_hadd_pd(dot1, dot2));
 //            _mm256_store_pd(dotProduct, dot1);
             double cij = C[i + j * lda];
-            for (int k = 0; k < 4; ++k) {
+            for (unsigned int k = 0; k < 4; ++k) {
                 cij += dotProduct[k];
             }
             C[i + j * lda] = cij;
@@ -117,11 +121,12 @@ static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int b
  * On exit, A and B maintain their input values. */
 void square_dgemm(int lda, double* A, double* B, double* C) {
     double* dotProduct = _mm_malloc(4 * sizeof(double), 64); // temp array of size 4 whose sum is a dot product
-    double* AT = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64); // temp array to store a transposed block
-    double* BBlock = _mm_malloc(BLOCK_SIZE * BLOCK_SIZE * sizeof(double), 64);
 
-    // round lda up to the nearest BLOCK_SIZE multiple
-    int ldaRounded = lda % BLOCK_SIZE == 0 ? lda : lda + (BLOCK_SIZE - (lda % BLOCK_SIZE));
+    // round lda up to the nearest B2_SIZE multiple
+    // by rounding up to a multiple of the largest block size, and if we guarantee all smaller block sizes divide
+    // the largest block size , we guarantee square blocks
+//    int ldaRounded = lda % BLOCK_SIZE == 0 ? lda : lda + (BLOCK_SIZE - (lda % BLOCK_SIZE));
+    int ldaRounded = lda % B2_SIZE == 0 ? lda : lda + (B2_SIZE - (lda % B2_SIZE));
     double* AAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
     double* BAligned = _mm_malloc(ldaRounded * ldaRounded * sizeof(double), 64);
 
@@ -187,26 +192,45 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //        }
 //    }
 
+        // outer level blocking
 
         // For each block-column of AAligned
-        for (int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
+        for (unsigned int bi = 0; bi < ldaRounded; bi += B2_SIZE) {
             // For each block-column of BAligned
-            for (int bj = 0; bj < ldaRounded; bj += BLOCK_SIZE) {
-                // Accumulate block dgemms into block of C
-                for (int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
+            for (unsigned int bj = 0; bj < ldaRounded; bj += B2_SIZE) {
+                // Iterate through the block row/column
+                for (unsigned int bk = 0; bk < ldaRounded; bk += B2_SIZE) {
+                    // Correct block dimensions if block "goes off edge of" the matrix
+                    //By having lda - bi , we are doing a nice optimization. even though we padded with zeros, this guarantees
+                    // we wont waste time taking dot products of zero-only rows / columns . So ig let's keep this ?
+                    int M = min(B2_SIZE, lda - bi);
+                    int N = min(B2_SIZE, lda - bj);
+                    int K = min(B2_SIZE, lda - bk);
 
-//                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
-                // Correct block dimensions if block "goes off edge of" the matrix
-                int M = min(BLOCK_SIZE, lda - bi);
-                int N = min(BLOCK_SIZE, lda - bj);
-                int K = min(BLOCK_SIZE, lda - bk);
-                printf("M = %d, N = %d, K = %d \n", M, N, K);
+                    // For each block-column of this AAligned-block
+                    for (unsigned int bii = 0; bii < M; bii += BLOCK_SIZE) {
+                        // For each block-column of this BAligned-block
+                        for (unsigned int bjj = 0; bjj < N; bjj += BLOCK_SIZE) {
+                            // Accumulate the blocks in this block-column/row into C
+                            for (unsigned int bkk = 0; bkk < K; bkk += BLOCK_SIZE) {
+                                // TODO there's a lot of options for how we compute these I think. let's see if this one works
+                                int MM = min(BLOCK_SIZE, M - bii);
+                                int NN = min(BLOCK_SIZE, N - bjj);
+                                int KK = min(BLOCK_SIZE, K - bkk);
+                                do_block(lda, ldaRounded, MM, NN, KK, bii, bjj, bkk, AAligned + bk + bkk + (bi + bii) * ldaRounded, BAligned + bk + bkk + (bj + bjj) * ldaRounded, C + bi + bii + (bj + bjj) * lda, dotProduct);
+                            }
+
+                        }
+                    }
+
+                    // TODO one might consider making a helper function / recursion
+//                    do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct);
+
 //                int M = min(BLOCK_SIZE, ldaRounded - bi);
 //                int N = min(BLOCK_SIZE, ldaRounded - bj);
 //                int K = min(BLOCK_SIZE, ldaRounded - bk);
                 // AAlignedPacked + bk * M * K + bi * M * ldaRounded
                 // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct);
 //                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAlignedPacked + bk * M * K + bi * M * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
             }
         }
