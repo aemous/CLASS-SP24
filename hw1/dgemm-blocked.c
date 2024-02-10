@@ -14,7 +14,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  * where C is M-by-N, A is K-by-M, and B is K-by-N.
  * bi is the block-row of A. bj is the block-column of B, bk is the block number (of A and B).
  */
-static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct, double* AT, double* BBlock) {
+static void do_block(int lda, int ldaRounded, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct) {
 //    double* AT = _mm_malloc(K * M * sizeof(double), 64); // K rows, M columns
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
@@ -187,25 +187,26 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //        }
 //    }
 
-    // Accumulate block dgemms into block of C
-    for (int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
+
         // For each block-column of AAligned
         for (int bi = 0; bi < ldaRounded; bi += BLOCK_SIZE) {
             // For each block-column of BAligned
             for (int bj = 0; bj < ldaRounded; bj += BLOCK_SIZE) {
+                // Accumulate block dgemms into block of C
+                for (int bk = 0; bk < ldaRounded; bk += BLOCK_SIZE) {
 
 //                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
                 // Correct block dimensions if block "goes off edge of" the matrix
-                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
                 int M = min(BLOCK_SIZE, lda - bi);
                 int N = min(BLOCK_SIZE, lda - bj);
                 int K = min(BLOCK_SIZE, lda - bk);
+                printf("M = %d, N = %d, K = %d \n", M, N, K);
 //                int M = min(BLOCK_SIZE, ldaRounded - bi);
 //                int N = min(BLOCK_SIZE, ldaRounded - bj);
 //                int K = min(BLOCK_SIZE, ldaRounded - bk);
                 // AAlignedPacked + bk * M * K + bi * M * ldaRounded
                 // Perform individual block dgemm
-                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
+                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAligned + bk + bi * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct);
 //                do_block(lda, ldaRounded, M, N, K, bi, bj, bk, AAlignedPacked + bk * M * K + bi * M * ldaRounded, BAligned + bk + bj * ldaRounded, C + bi + bj * lda, dotProduct, AT, BBlock);
             }
         }
@@ -249,9 +250,7 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
 //        }
 //    }
 
-    free(AT);
     free(dotProduct);
-    free(BBlock);
     free(AAligned);
     free(AAlignedPacked);
     free(BAligned);
