@@ -16,6 +16,7 @@ const char* dgemm_desc = "Simple blocked dgemm.";
  */
 static void do_block(int lda, int M, int N, int K, int bi, int bj, int bk, double* A, double* B, double* C, double* dotProduct) {
     if (K < BLOCK_SIZE) {
+        printf("Entered if\n");
         // K is not necessary a multiple of 4, so do not use SIMD
         // For each row i of A
         for (int i = 0; i < M; ++i) {
@@ -105,7 +106,6 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
             for (int bk = 0; bk < lda; bk += BLOCK_SIZE) {
 //                printf("bi = %d, bj = %d, bk = %d", bi, bj ,bk);
                 // Correct block dimensions if block "goes off edge of" the matrix
-                // TODO theoretically we don't need min since padding guarantees it's a multiple of BLOCK_SIZE
                 int M = min(BLOCK_SIZE, lda - bi);
                 int N = min(BLOCK_SIZE, lda - bj);
                 int K = min(BLOCK_SIZE, lda - bk);
