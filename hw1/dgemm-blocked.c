@@ -90,7 +90,8 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     for (unsigned int i = 0; i < lda; ++i) {
         for (unsigned int j = 0; j < lda; ++j) {
             printf("i = %d, j = %d \n", i, j);
-            AAligned[j + i * lda] = A[j + i * lda];
+            printf("Val: %f", A[j + i * lda]);
+//            AAligned[j + i * lda] = A[j + i * lda];
         }
     }
 
