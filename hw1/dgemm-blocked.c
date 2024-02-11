@@ -33,6 +33,8 @@ static void do_block(int lda, int M, int N, int K, int bi, int bj, int bk, doubl
         return;
     }
 
+    printf("Entered main body \n");
+
     __m256d rowA1; // stores first quarter of row i of A
     __m256d rowA2; // stores second quarter of row i of A
     __m256d rowA3; // stores third quarter of row i of A
