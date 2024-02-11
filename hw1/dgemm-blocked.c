@@ -89,9 +89,12 @@ void square_dgemm(int lda, double* A, double* B, double* C) {
     // copy A to AAligned
     for (unsigned int i = 0; i < lda; ++i) {
         for (unsigned int j = 0; j < lda; ++j) {
+            printf("i = %d, j = %d \n", i, j);
             AAligned[i + j * lda] = A[j + i * lda];
         }
     }
+
+    printf("Finished copying A \n");
 
     // copy B to BAligned, padded with zeros
     for (unsigned int i = 0; i < lda; ++i) {
