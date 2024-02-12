@@ -8,7 +8,6 @@
 #include <cmath> // For: fabs
 
 #include <cblas.h>
-//#include <Accelerate/Accelerate.h>
 
 #ifndef MAX_SPEED
 #error "Must set max speed with -DMAX_SPEED=... or similar"
@@ -54,7 +53,6 @@ int main(int argc, char** argv) {
     /* A representative subset of the first list. */
     std::vector<int> test_sizes{31,  32,  96,  97,  127, 128, 129, 191, 192, 229, 255, 256, 257,
                                 319, 320, 321, 417, 479, 480, 511, 512, 639, 640, 767, 768, 769};
-//    std::vector<int> test_sizes{4};
 #endif
 
     if (argc > 1) {
@@ -132,7 +130,6 @@ int main(int argc, char** argv) {
          *  - if they were, the following will most likely detect it:
          * C := C - A * B, computed with reference_dgemm */
         reference_dgemm(n, -1., A, B, C);
-//        printf("Reference_dgemm output1: %f %f %f %f \n %f %f %f %f \n %f %f %f %f \n %f %f %f %f", C[0], C[4], C[8], C[12], C[1], C[5], C[9], C[13], C[2], C[6], C[10], C[14], C[3], C[7], C[11], C[15]);
 
         /* A := |A|, B := |B|, C := |C| */
         std::transform(A, &A[n * n], A, fabs);
@@ -146,7 +143,6 @@ int main(int argc, char** argv) {
         /* If any element in C is positive, then something went wrong in square_dgemm */
         for (int i = 0; i < n * n; ++i) {
             if (C[i] > 0) {
-                std::printf("Error, reference C[%d] = %f", i, C[i]);
                 std::cerr << "*** FAILURE *** Error in matrix multiply exceeds componentwise error "
                              "bounds."
                           << std::endl;
