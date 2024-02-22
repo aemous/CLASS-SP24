@@ -13,12 +13,12 @@ std::vector<std::vector<std::vector<particle_t*>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
-    return (int) (num_cells * (p.x / size));
+    return (int) ((num_cells - 1) * (p.x / size));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, particle_t& p) {
-    return (int) (num_cells * (p.y / size));
+    return (int) ((num_cells-1) * (p.y / size));
 }
 
 // Apply the force from neighbor to particle
@@ -60,8 +60,6 @@ void move(particle_t& p, double size) {
         p.y = p.y < 0 ? -p.y : 2 * size - p.y;
         p.vy = -p.vy;
     }
-
-    // TODO maybe add a check here, only update the cell for this particle if it left its cell ?
 }
 
 
@@ -75,7 +73,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     std::cout << "Init called" << std::endl;
 
     // TODO when we parallelize, the below should be a function of num processors/threads
-    num_cells = floor(size / (5*(2 * cutoff / size)));
+    num_cells = floor(size / ((2 * cutoff / size)));
     cellSize = size / (num_cells-1);
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
 
