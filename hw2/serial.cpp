@@ -62,9 +62,6 @@ void move(particle_t& p, double size) {
     }
 }
 
-
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "modernize-use-emplace"
 void init_simulation(particle_t* parts, int num_parts, double size) {
     // You can use this space to initialize static, global data objects
     // that you may need. This function will be called once before the
@@ -97,10 +94,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
         cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).push_back(&parts[p]);
     }
 }
-#pragma clang diagnostic pop
 
-#pragma clang diagnostic push
-#pragma ide diagnostic ignored "modernize-loop-convert"
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // TODO this would be a good place to, for example, compute forces between particles
     // and other particles in the relevant cells of the screen tree.
@@ -168,6 +162,4 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
             }
         }
     }
-
 }
-#pragma clang diagnostic pop
