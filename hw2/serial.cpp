@@ -110,10 +110,10 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                 // compute force between particle k and all other relevant particles left or above k
                 row.at(j).at(k)->ax = row.at(j).at(k)->ay = 0;
 
-                int min_neighbor_i = (int) fmin(0, i-1);
-                int max_neighbor_i = (int) fmax(num_cells-1, i+1);
-                int min_neighbor_j = (int) fmin(0, j-1);
-                int max_neighbor_j = (int) fmax(num_cells-1, j+1);
+                int min_neighbor_i = (int) fmax(0, i-1);
+                int max_neighbor_i = (int) fmin(num_cells-1, i+1);
+                int min_neighbor_j = (int) fmax(0, j-1);
+                int max_neighbor_j = (int) fmin(num_cells-1, j+1);
 
                 for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
                     for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
