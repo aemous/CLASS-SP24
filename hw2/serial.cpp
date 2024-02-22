@@ -2,6 +2,7 @@
 #include <cmath>
 
 #include <vector>
+#include <iostream>
 
 int num_cells = 0;
 double cellSize = 0.;
@@ -73,6 +74,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     num_cells = floor(size / (2 * cutoff / size));
     cellSize = size / num_cells-1;
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
+
+    std::cout << "Num cells " << num_cells;
+    std::cout << "Exp parts per cell " << exp_parts_per_cell;
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
