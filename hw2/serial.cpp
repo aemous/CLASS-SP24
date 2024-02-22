@@ -13,12 +13,12 @@ std::vector<std::vector<std::vector<particle_t*>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
-    return (int) (num_cells * p.x / size);
+    return (int) (num_cells * (p.x / size));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, particle_t& p) {
-    return (int) (num_cells * p.y / size);
+    return (int) (num_cells * (p.y / size));
 }
 
 // Apply the force from neighbor to particle
@@ -60,6 +60,8 @@ void move(particle_t& p, double size) {
         p.y = p.y < 0 ? -p.y : 2 * size - p.y;
         p.vy = -p.vy;
     }
+
+    // TODO maybe add a check here, only update the cell for this particle if it left its cell ?
 }
 
 
@@ -137,13 +139,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
 //    std::cout << "Applied all forces for this step." << std::endl;
 
-    // clear each cell
-//    for (unsigned int i = 0; i < num_cells; ++i) {
-//        std::vector<std::vector<particle_t *>> row = cells.at(i);
-//        for (unsigned int j = 0; j < num_cells; ++j) {
-//            row.at(j).clear();
-//        }
-//    }
+
 
 //    std::cout << "Cleared all cells." << std::endl;
 
@@ -155,6 +151,23 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
 //    std::cout << "All parts moved this step." << std::endl;
+    for (unsigned int i = 0; i < num_cells; ++i) {
+        std::vector<std::vector<particle_t *>> row = cells.at(i);
+        for (unsigned int j = 0; j < num_cells; ++j) {
+            // for all particles in the cell
+            for (unsigned int k = 0; k < row.at(j).size(); ++k) {
+                // if this particle's coords changed, swap its cell
+
+                int cell_x = get_cell_x(size, *row.at(j).at(k));
+                int cell_y = get_cell_y(size, *row.at(j).at(k));
+
+                if (cell_x != i || cell_y != j) {
+                    cells.at(cell_x).at(cell_y).push_back(row.at(j).at(k));
+                    row.at(j).erase(row.at(j).begin() + k);
+                }
+            }
+        }
+    }
 
 }
 #pragma clang diagnostic pop
