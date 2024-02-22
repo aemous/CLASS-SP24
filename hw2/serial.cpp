@@ -75,7 +75,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     std::cout << "Init called" << std::endl;
 
     // TODO when we parallelize, the below should be a function of num processors/threads
-    num_cells = floor(size / 5*(2 * cutoff / size));
+    num_cells = floor(size / (5*(2 * cutoff / size)));
     cellSize = size / (num_cells-1);
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
 
