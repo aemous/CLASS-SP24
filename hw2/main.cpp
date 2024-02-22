@@ -136,7 +136,7 @@ int main(int argc, char** argv) {
                 save(fsave, parts, num_parts, size);
             }
 
-            std::cout << "Step " << step << std::endl;
+//            std::cout << "Step " << step << std::endl;
         }
     }
 

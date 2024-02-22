@@ -109,17 +109,17 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
     // TODO this would be a good place to, for example, compute forces between particles
     // and other particles in the relevant cells of the screen tree.
 //    std::cout << "Begin sim" << std::endl;
-    parts = inp_parts;
+//    parts = inp_parts;
 
-    for (unsigned int i = 0; i < num_cells; ++i) {
+    for (int i = 0; i < num_cells; ++i) {
 //        std::vector<std::vector<particle_t*>> row = cells.at(i);
         std::vector<std::unordered_map<int, int>> row = cells.at(i);
-        for (unsigned int j = 0; j < num_cells; ++j) {
+        for (int j = 0; j < num_cells; ++j) {
             std::unordered_map<int, int> cell = row.at(j);
-            for (auto k = cell.begin(); k != cell.end(); k++) {
+            for (auto & k : cell) {
             // compute force between particle k and all other relevant particles left or above k
 //                row.at(j).at(k)->ax = row.at(j).at(k)->ay = 0;
-                particle_t* curr_part = &parts[k->second];
+                particle_t* curr_part = &parts[k.second];
                 curr_part->ax = 0;
                 curr_part->ay = 0;
 
@@ -131,9 +131,9 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
                 for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
                     for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
                         std::unordered_map<int, int> neighbor_cell = cells.at(ii).at(jj);
-                        for (auto kk = neighbor_cell.begin(); kk != neighbor_cell.end(); kk++) {
-                            particle_t* neighbor_part = &parts[kk->second];
-                            if (neighbor_part->x < curr_part->x || (neighbor_part->x == curr_part->x && k->second < kk->second)) {
+                        for (auto & kk : neighbor_cell) {
+                            particle_t* neighbor_part = &parts[kk.second];
+                            if (neighbor_part->x < curr_part->x || (neighbor_part->x == curr_part->x && k.second < kk.second)) {
 //                                std::cout << "Computing force between particles " << i << " " << j << " " << k << " " << ii << " " << jj << " " << kk << std::endl;
 //                                apply_force(*row.at(j).at(k), *cells.at(ii).at(jj).at(kk));
                                 apply_force(*curr_part, *neighbor_part);
