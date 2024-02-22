@@ -125,6 +125,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                                 // what if two different particles have identical positions ?
                                 // they would be in the same cell with different k-values
                                 // TODO if we fail accuracy, add this check
+                                std::cout << "Computing force between particles " << i << " " << j << " " << k << " " << ii << " " << jj << " " << kk << std::endl;
                                 apply_force(*row.at(j).at(k), *cells.at(ii).at(jj).at(kk));
                             }
                         }
