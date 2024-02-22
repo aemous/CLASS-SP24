@@ -138,12 +138,12 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    std::cout << "Applied all forces for this step." << std::endl;
 
     // clear each cell
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        std::vector<std::vector<particle_t *>> row = cells.at(i);
-        for (unsigned int j = 0; j < num_cells; ++j) {
-            row.at(j).clear();
-        }
-    }
+//    for (unsigned int i = 0; i < num_cells; ++i) {
+//        std::vector<std::vector<particle_t *>> row = cells.at(i);
+//        for (unsigned int j = 0; j < num_cells; ++j) {
+//            row.at(j).clear();
+//        }
+//    }
 
 //    std::cout << "Cleared all cells." << std::endl;
 
@@ -152,7 +152,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         move(parts[i], size);
 
         // remap the particle to their proper cells based on their position
-        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
+//        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
 //    std::cout << "All parts moved this step." << std::endl;
 
