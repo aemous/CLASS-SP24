@@ -82,7 +82,6 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
 
     std::cout << "Num cells " << num_cells << std::endl;
     std::cout << "Cell size " << cellSize << std::endl;
-
     std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
 
     // initialize the grid of cells
@@ -109,7 +108,7 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
 void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
     // TODO this would be a good place to, for example, compute forces between particles
     // and other particles in the relevant cells of the screen tree.
-    std::cout << "Begin sim" << std::endl;
+//    std::cout << "Begin sim" << std::endl;
     parts = inp_parts;
 
     for (unsigned int i = 0; i < num_cells; ++i) {
@@ -146,7 +145,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         }
     }
 
-    std::cout << "Computed all forces for this step." << std::endl;
+//    std::cout << "Computed all forces for this step." << std::endl;
 
 
     // Move Particles
@@ -156,7 +155,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         // remap the particle to their proper cells based on their position
 //        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
-    std::cout << "All parts moved this step." << std::endl;
+//    std::cout << "All parts moved this step." << std::endl;
     for (unsigned int i = 0; i < num_cells; ++i) {
 //        std::vector<std::vector<particle_t *>> row = cells.at(i);
         std::vector<std::unordered_map<int, int>> row = cells.at(i);
@@ -170,14 +169,14 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
                 int cell_y = get_cell_y(size, *curr_part);
 
                 if (cell_x != i || cell_y != j) {
-                    std::cout << "About to swap particle cell" << std::endl;
+//                    std::cout << "About to swap particle cell" << std::endl;
 //                    cells.at(cell_x).at(cell_y).push_back(row.at(j).at(k));
 //                    cells.at(cell_x).at(cell_y).insert(row.at(j).at(k));
                     cells.at(cell_x).at(cell_y)[k->second] = k->second;
-                    std::cout << "Added part to next cell" << std::endl;
+//                    std::cout << "Added part to next cell" << std::endl;
 //                    row.at(j).erase(row.at(j).begin() + k);
                     k = cell.erase(k);
-                    std::cout << "Erased part from prev cell" << std::endl;
+//                    std::cout << "Erased part from prev cell" << std::endl;
 //                    k--;
 //                    std::cout << "Moved particle from " << i << " " << j << " to " << cell_x << " " << cell_y << std::endl;
                 } else {
