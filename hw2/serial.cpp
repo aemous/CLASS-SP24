@@ -11,12 +11,12 @@ std::vector<std::vector<std::vector<particle_t*>>> cells;
 // TODO for more efficiency, we can map particle indices to their cell indices
 
 // TODO this may change if our cells end up not being square after parallelism
-static int get_cell_x(const int num_cells, double size, particle_t& p) {
+static int get_cell_x(double size, particle_t& p) {
     return (int) (num_cells * p.x / size);
 }
 
 // TODO this may change if our cells end up not being square after parallelism
-static int get_cell_y(const int num_cells, double size, particle_t& p) {
+static int get_cell_y(double size, particle_t& p) {
     return (int) (num_cells * p.y / size);
 }
 
@@ -68,8 +68,8 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // algorithm begins. Do not do any particle simulation here
 
     // TODO when we parallelize, the below should be a function of num processors/threads
-    int num_cells = floor(size / (2 * cutoff / size));
-    double cellSize = size / num_cells-1;
+    num_cells = floor(size / (2 * cutoff / size));
+    cellSize = size / num_cells-1;
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
 
     // initialize the grid of cells
@@ -82,7 +82,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // map the particles to their proper cells based on their position
     for (unsigned int p = 0; p < num_parts; ++p) {
-        cells.at(get_cell_x(num_cells, size, parts[p])).at(get_cell_y(num_cells, size, parts[p])).push_back(&parts[p]);
+        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).push_back(&parts[p]);
     }
 }
 
@@ -134,7 +134,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         move(parts[i], size);
 
         // remap the particle to their proper cells based on their position
-        cells.at(get_cell_x(num_cells, size, parts[i])).at(get_cell_y(num_cells, size, parts[i])).push_back(&parts[i]);
+        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
 }
 #pragma clang diagnostic pop
