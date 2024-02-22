@@ -102,11 +102,14 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
 //        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).push_back(&parts[p]);
         cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p]))[p] = p;
     }
+
+    std::cout << "Init exit" << std::endl;
 }
 
 void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
     // TODO this would be a good place to, for example, compute forces between particles
     // and other particles in the relevant cells of the screen tree.
+    std::cout << "Begin sim" << std::endl;
     parts = inp_parts;
 
     for (unsigned int i = 0; i < num_cells; ++i) {
@@ -143,11 +146,8 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         }
     }
 
-//    std::cout << "Applied all forces for this step." << std::endl;
+    std::cout << "Computed all forces for this step." << std::endl;
 
-
-
-//    std::cout << "Cleared all cells." << std::endl;
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
