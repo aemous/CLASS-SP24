@@ -2,7 +2,6 @@
 #include <cmath>
 
 #include <vector>
-#include <iostream>
 #include <unordered_set>
 
 particle_t* parts;
@@ -13,14 +12,12 @@ std::vector<std::vector<std::unordered_set<particle_t*>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
-    // TODO cell num_cells-1 gets mapped to with neligible probability
-    return (int) ((num_cells - 1) * (p.x / size));
+    return (int) ((num_cells - 1) * fmin((p.x / (size - cellSize)), 1.0));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, particle_t& p) {
-    // TODO cell num_cells-1 gets mapped to with neligible probability
-    return (int) ((num_cells-1) * (p.y / size));
+    return (int) ((num_cells-1) * fmin((p.y / (size - cellSize)), 1.0));
 }
 
 // Apply the force from neighbor to particle
