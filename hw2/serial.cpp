@@ -62,6 +62,8 @@ void move(particle_t& p, double size) {
 }
 
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "modernize-use-emplace"
 void init_simulation(particle_t* parts, int num_parts, double size) {
     // You can use this space to initialize static, global data objects
     // that you may need. This function will be called once before the
@@ -74,9 +76,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.at(i) = std::vector<std::vector<particle_t*>>(num_cells);
+        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).at(j) = std::vector<particle_t*>(exp_parts_per_cell);
+            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell));
         }
     }
 
@@ -85,6 +87,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
         cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).push_back(&parts[p]);
     }
 }
+#pragma clang diagnostic pop
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "modernize-loop-convert"
