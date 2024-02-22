@@ -176,7 +176,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
                     cells.at(cell_x).at(cell_y)[k->second] = k->second;
                     std::cout << "Added part to next cell" << std::endl;
 //                    row.at(j).erase(row.at(j).begin() + k);
-                    cell.erase(k);
+                    k = cell.erase(k);
                     std::cout << "Erased part from prev cell" << std::endl;
 //                    k--;
 //                    std::cout << "Moved particle from " << i << " " << j << " to " << cell_x << " " << cell_y << std::endl;
