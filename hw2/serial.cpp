@@ -164,6 +164,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                 if (cell_x != i || cell_y != j) {
                     cells.at(cell_x).at(cell_y).push_back(row.at(j).at(k));
                     row.at(j).erase(row.at(j).begin() + k);
+                    std::cout << "Moved particle from " << i << " " << j << " to " << cell_x << " " << cell_y << std::endl;
                 }
             }
         }
