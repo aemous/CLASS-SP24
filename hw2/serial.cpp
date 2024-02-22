@@ -82,9 +82,11 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
+        cells.push_back(std::vector<std::vector<particle_t*>>());
+//        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell));
+            cells.at(i).push_back(std::vector<particle_t*>());
+//            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell));
         }
     }
 
