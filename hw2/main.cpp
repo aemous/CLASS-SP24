@@ -135,6 +135,8 @@ int main(int argc, char** argv) {
             if (fsave.good() && (step % savefreq) == 0) {
                 save(fsave, parts, num_parts, size);
             }
+
+            std::cout << "Step " << step << std::endl;
         }
     }
 
