@@ -12,12 +12,12 @@ std::vector<std::vector<std::vector<particle_t*>>> cells;
 // TODO for more efficiency, we can map particle indices to their cell indices
 
 // TODO this may change if our cells end up not being square after parallelism
-static int get_cell_x(double size, particle_t& p) {
+int get_cell_x(double size, particle_t& p) {
     return (int) (num_cells * p.x / size);
 }
 
 // TODO this may change if our cells end up not being square after parallelism
-static int get_cell_y(double size, particle_t& p) {
+int get_cell_y(double size, particle_t& p) {
     return (int) (num_cells * p.y / size);
 }
 
