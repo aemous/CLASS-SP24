@@ -134,6 +134,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
+    std::cout << "Applied all forces for this step." << std::endl;
+
     // clear each cell
     for (unsigned int i = 0; i < num_cells; ++i) {
         std::vector<std::vector<particle_t *>> row = cells.at(i);
@@ -142,6 +144,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
+    std::cout << "Cleared all cells." << std::endl;
+
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
         move(parts[i], size);
@@ -149,5 +153,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // remap the particle to their proper cells based on their position
         cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
+    std::cout << "All parts moved this step." << std::endl;
+
 }
 #pragma clang diagnostic pop
