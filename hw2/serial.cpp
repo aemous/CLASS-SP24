@@ -77,18 +77,18 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     cellSize = size / (num_cells-1);
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
 
-    std::cout << "Num cells " << num_cells << std::endl;
-    std::cout << "Cell size " << cellSize << std::endl;
+//    std::cout << "Num cells " << num_cells << std::endl;
+//    std::cout << "Cell size " << cellSize << std::endl;
 
-    std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
+//    std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::vector<particle_t*>>());
-//        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
+//        cells.push_back(std::vector<std::vector<particle_t*>>());
+        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::vector<particle_t*>());
-//            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell));
+//            cells.at(i).push_back(std::vector<particle_t*>());
+            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell));
         }
     }
 
@@ -125,7 +125,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                                 // what if two different particles have identical positions ?
                                 // they would be in the same cell with different k-values
                                 // TODO if we fail accuracy, add this check
-                                std::cout << "Computing force between particles " << i << " " << j << " " << k << " " << ii << " " << jj << " " << kk << std::endl;
+//                                std::cout << "Computing force between particles " << i << " " << j << " " << k << " " << ii << " " << jj << " " << kk << std::endl;
                                 apply_force(*row.at(j).at(k), *cells.at(ii).at(jj).at(kk));
                             }
                         }
@@ -135,7 +135,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    std::cout << "Applied all forces for this step." << std::endl;
+//    std::cout << "Applied all forces for this step." << std::endl;
 
     // clear each cell
     for (unsigned int i = 0; i < num_cells; ++i) {
@@ -145,7 +145,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    std::cout << "Cleared all cells." << std::endl;
+//    std::cout << "Cleared all cells." << std::endl;
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
@@ -154,7 +154,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // remap the particle to their proper cells based on their position
         cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).push_back(&parts[i]);
     }
-    std::cout << "All parts moved this step." << std::endl;
+//    std::cout << "All parts moved this step." << std::endl;
 
 }
 #pragma clang diagnostic pop
