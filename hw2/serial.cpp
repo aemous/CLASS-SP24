@@ -163,7 +163,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         for (unsigned int j = 0; j < num_cells; ++j) {
             std::unordered_map<int, int> cell = row.at(j);
             // for all particles in the cell
-            for (auto k = cell.begin(); k != cell.end(); k++) {
+            for (auto k = cell.begin(); k != cell.end();) {
                 // if this particle's coords changed, swap its cell
                 particle_t* curr_part = &parts[k->second];
                 int cell_x = get_cell_x(size, *curr_part);
@@ -180,6 +180,8 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
                     std::cout << "Erased part from prev cell" << std::endl;
 //                    k--;
 //                    std::cout << "Moved particle from " << i << " " << j << " to " << cell_x << " " << cell_y << std::endl;
+                } else {
+                    k++;
                 }
             }
         }
