@@ -3,25 +3,23 @@
 
 #include <vector>
 #include <iostream>
-#include <unordered_map>
 #include <unordered_set>
 
 particle_t* parts;
 int num_cells = 0;
 double cellSize = 0.;
 
-// TODO one may consider using unorderd set instead of map
-//std::vector<std::vector<std::unordered_map<int, int>>> cells;
 std::vector<std::vector<std::unordered_set<particle_t*>>> cells;
-//std::unordered_map<int, std::pair<int, int>> part_cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
+    // TODO cell num_cells-1 gets mapped to with neligible probability
     return (int) ((num_cells - 1) * (p.x / size));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, particle_t& p) {
+    // TODO cell num_cells-1 gets mapped to with neligible probability
     return (int) ((num_cells-1) * (p.y / size));
 }
 
@@ -72,16 +70,11 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
     // algorithm begins. Do not do any particle simulation here
 
     parts = inp_parts;
-    std::cout << "Init called" << std::endl;
 
     // TODO when we parallelize, the below should be a function of num processors/threads
     num_cells = floor(size / ((2 * cutoff / size)));
     cellSize = size / (num_cells-1);
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
-
-    std::cout << "Num cells " << num_cells << std::endl;
-    std::cout << "Cell size " << cellSize << std::endl;
-    std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
@@ -93,13 +86,8 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
 
     // map the particles to their proper cells based on their position
     for (int p = 0; p < num_parts; ++p) {
-        int cell_x = get_cell_x(size, parts[p]);
-        int cell_y = get_cell_y(size, parts[p]);
-        cells.at(cell_x).at(cell_y).insert(&parts[p]);
-//        part_cells[p] = std::make_pair(cell_x, cell_y);
+        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).insert(&parts[p]);
     }
-
-    std::cout << "Init exit" << std::endl;
 }
 
 void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
@@ -143,7 +131,6 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         if (cell_x != prev_cell_x || prev_cell_y) {
             cells.at(cell_x).at(cell_y).insert(&parts[i]);
             cells.at(prev_cell_x).at(prev_cell_y).erase(&parts[i]);
-//            part_cells[i] = std::make_pair(cell_x, cell_y);
         }
     }
 }
