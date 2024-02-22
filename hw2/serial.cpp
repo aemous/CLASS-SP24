@@ -79,10 +79,10 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     cellSize = size / (num_cells-1);
     int exp_parts_per_cell = ceil(cellSize / size * num_parts);
 
-//    std::cout << "Num cells " << num_cells << std::endl;
-//    std::cout << "Cell size " << cellSize << std::endl;
+    std::cout << "Num cells " << num_cells << std::endl;
+    std::cout << "Cell size " << cellSize << std::endl;
 
-//    std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
+    std::cout << "Exp parts per cell " << exp_parts_per_cell << std::endl;
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
