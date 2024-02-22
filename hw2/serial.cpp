@@ -70,6 +70,8 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // that you may need. This function will be called once before the
     // algorithm begins. Do not do any particle simulation here
 
+    std::cout << "Init called";
+
     // TODO when we parallelize, the below should be a function of num processors/threads
     num_cells = floor(size / (2 * cutoff / size));
     cellSize = size / num_cells-1;
