@@ -13,7 +13,7 @@ double cellSize = 0.;
 // TODO one may consider using unorderd set instead of map
 //std::vector<std::vector<std::unordered_map<int, int>>> cells;
 std::vector<std::vector<std::unordered_set<particle_t*>>> cells;
-std::unordered_map<int, std::pair<int, int>> part_cells;
+//std::unordered_map<int, std::pair<int, int>> part_cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
@@ -96,7 +96,7 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
         int cell_x = get_cell_x(size, parts[p]);
         int cell_y = get_cell_y(size, parts[p]);
         cells.at(cell_x).at(cell_y).insert(&parts[p]);
-        part_cells[p] = std::make_pair(cell_x, cell_y);
+//        part_cells[p] = std::make_pair(cell_x, cell_y);
     }
 
     std::cout << "Init exit" << std::endl;
@@ -109,12 +109,13 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         // for each neighbor cell
             // compute force if particle id less than current particle id
     for (int i = 0; i < num_parts; ++i) {
-        std::pair<int, int> cell = part_cells.at(i);
+        int cell_x = get_cell_x(size, parts[i]);
+        int cell_y = get_cell_y(size, parts[i]);
 
-        int min_neighbor_i = (int) fmax(0, cell.first-1);
-        int max_neighbor_i = (int) fmin(num_cells-1, i+1);
-        int min_neighbor_j = (int) fmax(0, cell.second-1);
-        int max_neighbor_j = (int) fmin(num_cells-1, cell.second+1);
+        int min_neighbor_i = (int) fmax(0, cell_x-1);
+        int max_neighbor_i = (int) fmin(num_cells-1, cell_x+1);
+        int min_neighbor_j = (int) fmax(0, cell_y-1);
+        int max_neighbor_j = (int) fmin(num_cells-1, cell_y+1);
 
         for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
             for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
@@ -129,79 +130,20 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
         }
     }
 
-//    for (int i = 0; i < num_cells; ++i) {
-////        std::vector<std::vector<particle_t*>> row = cells.at(i);
-//        std::vector<std::unordered_map<int, int>> row = cells.at(i);
-//        for (int j = 0; j < num_cells; ++j) {
-//            std::unordered_map<int, int> cell = row.at(j);
-//            for (auto & k : cell) {
-//            // compute force between particle k and all other relevant particles left or above k
-//                particle_t* curr_part = &parts[k.second];
-//                curr_part->ax = 0;
-//                curr_part->ay = 0;
-//
-//                int min_neighbor_i = (int) fmax(0, i-1);
-//                int max_neighbor_i = (int) fmin(num_cells-1, i+1);
-//                int min_neighbor_j = (int) fmax(0, j-1);
-//                int max_neighbor_j = (int) fmin(num_cells-1, j+1);
-//
-//                for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
-//                    for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
-//                        std::unordered_map<int, int> neighbor_cell = cells.at(ii).at(jj);
-//                        for (auto & kk : neighbor_cell) {
-//                            particle_t* neighbor_part = &parts[kk.second];
-//                            if (neighbor_part->x < curr_part->x || (neighbor_part->x == curr_part->x && k.second < kk.second)) {
-//                                apply_force(*curr_part, *neighbor_part);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
-        move(parts[i], size);
-    }
+        int prev_cell_x = get_cell_x(size, parts[i]);
+        int prev_cell_y = get_cell_y(size, parts[i]);
 
-    // for each particle
-    // get its previous cell from global map
-    // compute a new cell
-    // if different from the one in global map
-    // move the particle to that cell
-    // update the global map with the new cell
-    for (int i = 0; i < num_parts; ++i) {
-        std::pair<int, int> prev_cell = part_cells.at(i);
+        move(parts[i], size);
+
         int cell_x = get_cell_x(size, parts[i]);
         int cell_y = get_cell_y(size, parts[i]);
 
-        if (cell_x != prev_cell.first || cell_y != prev_cell.second) {
+        if (cell_x != prev_cell_x || prev_cell_y) {
             cells.at(cell_x).at(cell_y).insert(&parts[i]);
-            cells.at(prev_cell.first).at(prev_cell.second).erase(&parts[i]);
-            part_cells[i] = std::make_pair(cell_x, cell_y);
+            cells.at(prev_cell_x).at(prev_cell_y).erase(&parts[i]);
+//            part_cells[i] = std::make_pair(cell_x, cell_y);
         }
     }
-
-
-//    for (unsigned int i = 0; i < num_cells; ++i) {
-//        std::vector<std::unordered_map<int, int>> row = cells.at(i);
-//        for (unsigned int j = 0; j < num_cells; ++j) {
-//            std::unordered_map<int, int> cell = row.at(j);
-//            // for all particles in the cell
-//            for (auto k = cell.begin(); k != cell.end();) {
-//                // if this particle's coords changed, swap its cell
-//                particle_t* curr_part = &parts[k->second];
-//                int cell_x = get_cell_x(size, *curr_part);
-//                int cell_y = get_cell_y(size, *curr_part);
-//
-//                if (cell_x != i || cell_y != j) {
-//                    cells.at(cell_x).at(cell_y)[k->second] = k->second;
-//                    k = cell.erase(k);
-//                } else {
-//                    k++;
-//                }
-//            }
-//        }
-//    }
 }
