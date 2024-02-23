@@ -101,7 +101,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // clear cells
 
     // map to the bin
-
+    naive_simulate(parts, num_parts, size);
+    return;
 
     // for each bin,
     // for each neighbor bin
