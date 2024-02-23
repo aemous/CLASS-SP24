@@ -133,17 +133,16 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     for (int i = 0; i < num_cells; ++i) {
         for (int j = 0; j < num_cells; ++j) {
             for (int k = 0; k < cells.at(i).at(j).size(); ++k) {
-                for (unsigned int jj = (int) fmax(0, j-1); jj <= (int) fmin(num_cells-1, j+1); ++jj) {
-                    for (unsigned int ii = (int) fmax(0, i-1); ii <= (int) fmin(num_cells-1, i+1); ++ii) {
+                for (unsigned int ii = std::max(0, i-1); ii <= std::min(num_cells-1, i+1); ++ii) {
+                    for (unsigned int jj = std::max(0, j-1); jj <= std::min(num_cells-1, j+1); ++jj) {
                         for (unsigned int kk = 0; kk < cells.at(ii).at(jj).size(); ++kk) {
                             if (i != ii || j != jj || k != kk) {
-                                apply_force(cells.at(i).at(j).at(kk), cells.at(ii).at(jj).at(kk));
+                                apply_force(cells.at(i).at(j).at(k), cells.at(ii).at(jj).at(kk));
                             }
                         }
                     }
                 }
             }
-
         }
     }
 
