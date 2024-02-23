@@ -65,7 +65,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // that you may need. This function will be called once before the
     // algorithm begins. Do not do any particle simulation here
 
-    // TODO when we parallelize, the below should be a function of num processors/threads
+    // TODO when we parallelize, the below might be a function of num processors/threads
     num_cells = floor(size / cutoff);
     cellSize = size / num_cells;
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
@@ -74,7 +74,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     for (unsigned int i = 0; i < num_cells; ++i) {
         cells.push_back(std::vector<std::unordered_set<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::unordered_set<particle_t*>(exp_parts_per_cell));
+            cells.at(i).push_back(std::unordered_set<particle_t*>(exp_parts_per_cell + 10));
         }
     }
 
@@ -89,18 +89,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle in the world
         // get its cell
         // for each neighbor cell
-            // compute force if particle id less than current particle id
+            // compute force
     for (int i = 0; i < num_parts; ++i) {
         int cell_x = get_cell_x(size, parts[i]);
         int cell_y = get_cell_y(size, parts[i]);
 
-        int min_neighbor_i = (int) fmax(0, cell_x-1);
-        int max_neighbor_i = (int) fmin(num_cells-1, cell_x+1);
-        int min_neighbor_j = (int) fmax(0, cell_y-1);
-        int max_neighbor_j = (int) fmin(num_cells-1, cell_y+1);
-
-        for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
-            for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
+        for (unsigned int ii = (int) fmax(0, cell_x-1); ii <= (int) fmin(num_cells-1, cell_x+1); ++ii) {
+            for (unsigned int jj = (int) fmax(0, cell_y-1); jj <= (int) fmin(num_cells-1, cell_y+1); ++jj) {
                 for (auto & neighbor_part : cells.at(ii).at(jj)) {
                     apply_force(parts[i], *neighbor_part);
                 }
@@ -110,20 +105,10 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
-//        int prev_cell_x = get_cell_x(size, parts[i]);
-//        int prev_cell_y = get_cell_y(size, parts[i]);
-
-        move(parts[i], size);
-
-//        int cell_x = get_cell_x(size, parts[i]);
-//        int cell_y = get_cell_y(size, parts[i]);
-//
-//        if (cell_x != prev_cell_x || prev_cell_y) {
-//            cells.at(cell_x).at(cell_y).insert(&parts[i]);
-//            cells.at(prev_cell_x).at(prev_cell_y).erase(&parts[i]);
-//        }
+       move(parts[i], size);
     }
 
+    // TODO what if it's more efficient to let the cells leaks, reinstantiate the sets each step ?
     // Clear cells
     for (int i = 0; i < num_cells; ++i) {
         for (int j = 0; j < num_cells; ++j) {
@@ -133,9 +118,6 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     // Recompute particle cells
     for (int i = 0; i < num_parts; ++i) {
-        int cell_x = get_cell_x(size, parts[i]);
-        int cell_y = get_cell_y(size, parts[i]);
-
-        cells.at(cell_x).at(cell_y).insert(&parts[i]);
+        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).insert(&parts[i]);
     }
 }
