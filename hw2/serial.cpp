@@ -2,8 +2,6 @@
 #include <cmath>
 #include <vector>
 
-#define naive true
-
 int num_cells = 0;
 double cellSize = 0.;
 
@@ -106,10 +104,10 @@ void naive_simulate(particle_t* parts, int num_parts, double size) {
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    if (naive) {
-        naive_simulate(parts, num_parts, size);
-        return;
-    }
+//    if (naive) {
+//        naive_simulate(parts, num_parts, size);
+//        return;
+//    }
 
     // next attempt:
     // for each particle in the world
