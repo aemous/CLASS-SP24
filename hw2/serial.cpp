@@ -108,9 +108,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle in the bin
     // do the thing
 
+    // ohh, it actually might be best to do: for every particle, for every neighbor bin, for every particle
+    // we'd still make use of the spatial locality of storing the copies
+
     for (int i = 0; i < num_cells; ++i) {
         for (int j = 0; j < num_cells; ++j) {
             for (int k = 0; k < cells.at(i).at(j).size(); ++k) {
+                cells.at(i).at(j).at(k).ax = cells.at(i).at(j).at(k).ay = 0;
                 for (unsigned int ii = std::max(0, i-1); ii <= std::min(num_cells-1, i+1); ++ii) {
                     for (unsigned int jj = std::max(0, j-1); jj <= std::min(num_cells-1, j+1); ++jj) {
                         for (unsigned int kk = 0; kk < cells.at(ii).at(jj).size(); ++kk) {
