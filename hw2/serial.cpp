@@ -1,7 +1,8 @@
 #include "common.h"
 #include <cmath>
-
 #include <vector>
+
+#define naive true
 
 int num_cells = 0;
 double cellSize = 0.;
@@ -10,12 +11,18 @@ std::vector<std::vector<std::vector<int>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, double x) {
-    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
+    // 0 -> 0
+    // cellSize -> 1
+    // 2*cellSize -> 2
+    // /
+    return x / cellSize; // what if x / cellSize = num_cells ?
+    // then x = num_cells * cell_size = size, which is technically possible
+    return ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, double y) {
-    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+    return ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
 }
 
 // Apply the force from neighbor to particle
@@ -83,7 +90,26 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     }
 }
 
+void naive_simulate(particle_t* parts, int num_parts, double size) {
+    for (int i = 0; i < num_parts; ++i) {
+        parts[i].ax = parts[i].ay = 0;
+        for (int j = 0; j < num_parts; ++j) {
+            apply_force(parts[i], parts[j]);
+        }
+    }
+
+    // Move Particles
+    for (int i = 0; i < num_parts; ++i) {
+        move(parts[i], size);
+    }
+}
+
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
+    if (naive) {
+        naive_simulate(parts, num_parts, size);
+        return;
+    }
+
     // next attempt:
     // for each particle in the world
         // get its cell
