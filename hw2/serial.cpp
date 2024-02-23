@@ -5,7 +5,8 @@
 int num_cells = 0;
 double cellSize = 0.;
 
-std::vector<std::vector<std::vector<int>>> cells;
+//std::vector<std::vector<std::vector<int>>> cells;
+std::vector<std::vector<std::vector<particle_t>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, double x) {
@@ -15,13 +16,21 @@ int get_cell_x(double size, double x) {
     // /
 //    return x / cellSize; // what if x / cellSize = num_cells ?
     // then x = num_cells * cell_size = size, which is technically possible
-    return ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
+
+    // if x == size, map it to last bin
+
+    // (int) (num_cells-1) * x / size
+    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
 }
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, double y) {
 //    return y / cellSize;
-    return ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+
+    // if y == size, map it to last bin
+
+    // (int) (num_cells-1) * y / size
+    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
 }
 
 // Apply the force from neighbor to particle
@@ -77,15 +86,19 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::vector<int>>(num_cells));
+//        cells.push_back(std::vector<std::vector<int>>(num_cells));
+        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::vector<int>(exp_parts_per_cell + 10));
+//            cells.at(i).push_back(std::vector<int>(exp_parts_per_cell + 10));
+            cells.at(i).push_back(std::vector<particle_t>(exp_parts_per_cell + 10));
         }
     }
 
+    // lets remove from init, and move to beginning of simulate
     // map the particles to their proper cells based on their position
     for (int p = 0; p < num_parts; ++p) {
-        cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(p);
+//        cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(p);
+        cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(parts[p]);
     }
 }
 
@@ -104,29 +117,50 @@ void naive_simulate(particle_t* parts, int num_parts, double size) {
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-//    if (naive) {
-//        naive_simulate(parts, num_parts, size);
-//        return;
-//    }
 
-    // next attempt:
-    // for each particle in the world
-        // get its cell
-        // for each neighbor cell
-            // compute force
-    for (int i = 0; i < num_parts; ++i) {
-        int cell_x = get_cell_x(size, parts[i].x);
-        int cell_y = get_cell_y(size, parts[i].y);
 
-        // TODO experiment with loop order?
-        for (unsigned int jj = (int) fmax(0, cell_y-1); jj <= (int) fmin(num_cells-1, cell_y+1); ++jj) {
-            for (unsigned int ii = (int) fmax(0, cell_x-1); ii <= (int) fmin(num_cells-1, cell_x+1); ++ii) {
-                for (auto & neighbor_part : cells.at(ii).at(jj)) {
-                    apply_force(parts[i], parts[neighbor_part]);
+    // clear cells
+
+    // map to the bin
+
+
+
+    // for each bin,
+    // for each neighbor bin
+    // for each particle in the bin
+    // do the thing
+
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            for (int k = 0; k < cells.at(i).at(j).size(); ++k) {
+                for (unsigned int jj = (int) fmax(0, j-1); jj <= (int) fmin(num_cells-1, j+1); ++jj) {
+                    for (unsigned int ii = (int) fmax(0, i-1); ii <= (int) fmin(num_cells-1, i+1); ++ii) {
+                        for (unsigned int kk = 0; kk < cells.at(ii).at(jj).size(); ++kk) {
+                            if (i != ii || j != jj || k != kk) {
+                                apply_force(cells.at(i).at(j).at(kk), cells.at(ii).at(jj).at(kk));
+                            }
+                        }
+                    }
                 }
             }
+
         }
     }
+
+
+//    for (int i = 0; i < num_parts; ++i) {
+//        int cell_x = get_cell_x(size, parts[i].x);
+//        int cell_y = get_cell_y(size, parts[i].y);
+//
+//        // TODO experiment with loop order?
+//        for (unsigned int jj = (int) fmax(0, cell_y-1); jj <= (int) fmin(num_cells-1, cell_y+1); ++jj) {
+//            for (unsigned int ii = (int) fmax(0, cell_x-1); ii <= (int) fmin(num_cells-1, cell_x+1); ++ii) {
+//                for (auto & neighbor_part : cells.at(ii).at(jj)) {
+//                    apply_force(parts[i], parts[neighbor_part]);
+//                }
+//            }
+//        }
+//    }
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
@@ -142,6 +176,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     // Recompute particle cells
     for (int i = 0; i < num_parts; ++i) {
-        cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(i);
+//        cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(i);
+        cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(parts[i]);
     }
 }
