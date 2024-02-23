@@ -22,7 +22,8 @@ int get_cell_x(double size, double x) {
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, double y) {
-    return ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+    return y / cellSize;
+//    return ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
 }
 
 // Apply the force from neighbor to particle
