@@ -112,32 +112,14 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // ohh, it actually might be best to do: for every particle, for every neighbor bin, for every particle
     // we'd still make use of the spatial locality of storing the copies
 
-//    for (int i = 0; i < num_parts; ++i) {
-//        parts[i].ax = parts[i].ay = 0;
-//        int cell_x = get_cell_x(size, parts[i].x);
-//        int cell_y = get_cell_y(size, parts[i].y);
-//        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-//            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-//                for (auto & kk : cells.at(ii).at(jj)) {
-//                    apply_force(parts[i], kk);
-//                }
-//            }
-//        }
-//    }
-
-    for (int i = 0; i < num_cells; ++i) {
-        for (int j = 0; j < num_cells; ++j) {
-            for (int k = 0; k < cells.at(i).at(j).size(); ++k) {
-                cells.at(i).at(j).at(k).ax = cells.at(i).at(j).at(k).ay = 0;
-                for (unsigned int ii = std::max(0, i-1); ii <= std::min(num_cells-1, i+1); ++ii) {
-                    for (unsigned int jj = std::max(0, j-1); jj <= std::min(num_cells-1, j+1); ++jj) {
-                        for (unsigned int kk = 0; kk < cells.at(ii).at(jj).size(); ++kk) {
-//                            if (i == ii && j == jj && k == kk) {
-//                                continue;
-//                            }
-                            apply_force(cells.at(i).at(j).at(k), cells.at(ii).at(jj).at(kk));
-                        }
-                    }
+    for (int i = 0; i < num_parts; ++i) {
+        parts[i].ax = parts[i].ay = 0;
+        int cell_x = get_cell_x(size, parts[i].x);
+        int cell_y = get_cell_y(size, parts[i].y);
+        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+                for (auto & kk : cells.at(ii).at(jj)) {
+                    apply_force(parts[i], kk);
                 }
             }
         }
