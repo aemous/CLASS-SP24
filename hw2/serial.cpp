@@ -2,12 +2,13 @@
 #include <cmath>
 
 #include <vector>
-#include <unordered_set>
+//#include <unordered_set>
 
 int num_cells = 0;
 double cellSize = 0.;
 
-std::vector<std::vector<std::unordered_set<particle_t*>>> cells;
+//std::vector<std::vector<std::unordered_set<particle_t*>>> cells;
+std::vector<std::vector<std::vector<particle_t*>>> cells;
 
 // TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, particle_t& p) {
@@ -80,7 +81,8 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // map the particles to their proper cells based on their position
     for (int p = 0; p < num_parts; ++p) {
-        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).insert(&parts[p]);
+//        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).insert(&parts[p]);
+        cells.at(get_cell_x(size, parts[p])).at(get_cell_y(size, parts[p])).push_back(&parts[p]);
     }
 }
 
@@ -94,6 +96,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         int cell_x = get_cell_x(size, parts[i]);
         int cell_y = get_cell_y(size, parts[i]);
 
+        // TODO experiment with loop order?
         for (unsigned int ii = (int) fmax(0, cell_x-1); ii <= (int) fmin(num_cells-1, cell_x+1); ++ii) {
             for (unsigned int jj = (int) fmax(0, cell_y-1); jj <= (int) fmin(num_cells-1, cell_y+1); ++jj) {
                 for (auto & neighbor_part : cells.at(ii).at(jj)) {
@@ -117,6 +120,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     // Recompute particle cells
     for (int i = 0; i < num_parts; ++i) {
-        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).insert(&parts[i]);
+//        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).insert(&parts[i]);
+        cells.at(get_cell_x(size, parts[i])).at(get_cell_y(size, parts[i])).emplace_back(&parts[i]);
     }
 }
