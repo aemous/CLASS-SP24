@@ -114,17 +114,32 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
-        int prev_cell_x = get_cell_x(size, parts[i]);
-        int prev_cell_y = get_cell_y(size, parts[i]);
+//        int prev_cell_x = get_cell_x(size, parts[i]);
+//        int prev_cell_y = get_cell_y(size, parts[i]);
 
         move(parts[i], size);
 
+//        int cell_x = get_cell_x(size, parts[i]);
+//        int cell_y = get_cell_y(size, parts[i]);
+//
+//        if (cell_x != prev_cell_x || prev_cell_y) {
+//            cells.at(cell_x).at(cell_y).insert(&parts[i]);
+//            cells.at(prev_cell_x).at(prev_cell_y).erase(&parts[i]);
+//        }
+    }
+
+    // Clear cells
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            cells.at(i).at(j).clear();
+        }
+    }
+
+    // Recompute particle cells
+    for (int i = 0; i < num_parts; ++i) {
         int cell_x = get_cell_x(size, parts[i]);
         int cell_y = get_cell_y(size, parts[i]);
 
-        if (cell_x != prev_cell_x || prev_cell_y) {
-            cells.at(cell_x).at(cell_y).insert(&parts[i]);
-            cells.at(prev_cell_x).at(prev_cell_y).erase(&parts[i]);
-        }
+        cells.at(cell_x).at(cell_y).insert(&parts[i]);
     }
 }
