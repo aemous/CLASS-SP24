@@ -106,10 +106,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
             for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
                 std::unordered_set<particle_t*> neighbor_cell = cells.at(ii).at(jj);
                 for (auto & neighbor_part : neighbor_cell) {
-                    // TODO if we fail accuracy, map particle pointers to their indices (or subclass particle type to add id?)
-                    if (neighbor_part->x < parts[i].x) {
-                        apply_force(parts[i], *neighbor_part);
-                    }
+                    apply_force(parts[i], *neighbor_part);
                 }
             }
         }
