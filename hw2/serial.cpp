@@ -72,9 +72,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::unordered_set<particle_t*>>(num_cells));
+        cells.emplace_back(num_cells);
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::unordered_set<particle_t*>(exp_parts_per_cell + 10));
+            cells.at(i).emplace_back(exp_parts_per_cell + 10);
         }
     }
 
@@ -108,19 +108,10 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
        move(parts[i], size);
     }
 
-    // TODO what if it's more efficient to let the cells leaks, reinstantiate the sets each step ?
     // Clear cells
-    cells = std::vector<std::vector<std::unordered_set<particle_t*>>>();
-//    for (int i = 0; i < num_cells; ++i) {
-//        for (int j = 0; j < num_cells; ++j) {
-////            cells.at(i).at(j).clear();
-//            cells.at(i).push_back(std::unordered_set<particle_t*>(ceil(1.0 * num_parts / num_cells) + 10));
-//        }
-//    }
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::unordered_set<particle_t*>>(num_cells));
-        for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::unordered_set<particle_t*>(ceil(1.0 * num_parts / num_cells) + 10));
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            cells.at(i).at(j).clear();
         }
     }
 
