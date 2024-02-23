@@ -4,7 +4,6 @@
 #include <vector>
 #include <unordered_set>
 
-particle_t* parts;
 int num_cells = 0;
 double cellSize = 0.;
 
@@ -61,16 +60,14 @@ void move(particle_t& p, double size) {
     }
 }
 
-void init_simulation(particle_t* inp_parts, int num_parts, double size) {
+void init_simulation(particle_t* parts, int num_parts, double size) {
     // You can use this space to initialize static, global data objects
     // that you may need. This function will be called once before the
     // algorithm begins. Do not do any particle simulation here
 
-    parts = inp_parts;
-
     // TODO when we parallelize, the below should be a function of num processors/threads
-    num_cells = floor(size / ((2 * cutoff / size)));
-    cellSize = size / (num_cells-1);
+    num_cells = floor(size / cutoff);
+    cellSize = size / num_cells;
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
 
     // initialize the grid of cells
@@ -87,7 +84,7 @@ void init_simulation(particle_t* inp_parts, int num_parts, double size) {
     }
 }
 
-void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
+void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // next attempt:
     // for each particle in the world
         // get its cell
@@ -104,8 +101,7 @@ void simulate_one_step(particle_t* inp_parts, int num_parts, double size) {
 
         for (unsigned int ii = min_neighbor_i; ii <= max_neighbor_i; ++ii) {
             for (unsigned int jj = min_neighbor_j; jj <= max_neighbor_j; ++jj) {
-                std::unordered_set<particle_t*> neighbor_cell = cells.at(ii).at(jj);
-                for (auto & neighbor_part : neighbor_cell) {
+                for (auto & neighbor_part : cells.at(ii).at(jj)) {
                     apply_force(parts[i], *neighbor_part);
                 }
             }
