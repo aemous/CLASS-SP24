@@ -79,27 +79,27 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     int id = omp_get_thread_num();
 
     // TODO one might consider parallelizing force computation
-    if (id == 0) {
-        for (int i = 0; i < num_parts; ++i) {
-            parts[i].ax = parts[i].ay = 0;
-            int cell_x = get_cell_x(size, parts[i].x);
-            int cell_y = get_cell_y(size, parts[i].y);
-            for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-                for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-                    for (auto & kk : cells.at(ii).at(jj)) {
-                        apply_force(parts[i], kk);
-                    }
+
+    // the simplest way, just slap omp for on this loop. it's embarrassingly parallel, but there might be false sharing
+    #pragma omp for schedule(static)
+    for (int i = 0; i < num_parts; ++i) {
+        parts[i].ax = parts[i].ay = 0;
+        int cell_x = get_cell_x(size, parts[i].x);
+        int cell_y = get_cell_y(size, parts[i].y);
+        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+                for (auto & kk : cells.at(ii).at(jj)) {
+                    apply_force(parts[i], kk);
                 }
             }
         }
+        // TODO what if we move the particle rn ? THEN barrier before clearing
     }
 
-    #pragma omp barrier
+    # pragma omp barrier
 
-    // Move Particles
-
-    // TODO false sharing ? maybe...
-    #pragma omp for
+    // TODO one might consider parallelizing this, but it's high-cost-low-return rn
+    #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
         move(parts[i], size);
     }
