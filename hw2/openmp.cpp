@@ -81,7 +81,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // TODO one might consider parallelizing force computation
 
     // the simplest way, just slap omp for on this loop. it's embarrassingly parallel, but there might be false sharing
-    #pragma omp for schedule(static)
+    #pragma omp for
     for (int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
