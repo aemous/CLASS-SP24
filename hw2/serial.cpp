@@ -8,11 +8,13 @@ double cellSize = 0.;
 std::vector<std::vector<std::vector<particle_t>>> cells;
 
 int get_cell_x(double size, double x) {
-    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
+//    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
+    return (int) ((num_cells-1) * x / size);
 }
 
 int get_cell_y(double size, double y) {
-    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+//    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+    return (int) ((num_cells-1) * y / size);
 }
 
 // Apply the force from neighbor to particle
@@ -93,7 +95,7 @@ void naive_simulate(particle_t* parts, int num_parts, double size) {
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    for (int i = 0; i < num_parts; ++i) {
+    for (unsigned int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
         int cell_y = get_cell_y(size, parts[i].y);
