@@ -57,6 +57,27 @@ void move(particle_t& p, double size) {
     }
 }
 
+// Integrate the ODE, and store the new position in its acceleration field
+void move_acc(particle_t& p, double size) {
+    // Slightly simplified Velocity Verlet integration
+    // Conserves energy better than explicit Euler method
+    p.vx += p.ax * dt;
+    p.vy += p.ay * dt;
+    p.ax = p.x + p.vx * dt;
+    p.ay = p.y + p.vy * dt;
+
+    // Bounce from walls
+    while (p.ax < 0 || p.ax > size) {
+        p.ax = p.ax < 0 ? -p.ax : 2 * size - p.ax;
+        p.vx = -p.vx;
+    }
+
+    while (p.y < 0 || p.y > size) {
+        p.ay = p.ay < 0 ? -p.ay : 2 * size - p.ay;
+        p.vy = -p.vy;
+    }
+}
+
 void init_simulation(particle_t* parts, int num_parts, double size) {
     num_cells = floor(size / cutoff);
     cellSize = size / num_cells;
@@ -78,8 +99,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     int id = omp_get_thread_num();
 
-    // TODO one might consider parallelizing force computation
-
     // the simplest way, just slap omp for on this loop. it's embarrassingly parallel, but there might be false sharing
     #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
@@ -93,7 +112,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                 }
             }
         }
-        // TODO what if we recompute the particle cell rn ? and set it later (after clearing) ?
+
+        move_acc(parts[i], size);
     }
 
     # pragma omp barrier
@@ -101,7 +121,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // TODO one might consider parallelizing this, but it's high-cost-low-return rn
     #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
-        move(parts[i], size);
+        parts[i].x = parts[i].ax;
+        parts[i].y = parts[i].ay;
+
+        parts[i].ax = get_cell_x(size, parts[i].x);
+        parts[i].ay = get_cell_y(size, parts[i].y);
     }
 
     // TODO one might consider parallelizing clearing the cells
@@ -115,11 +139,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     }
 
     // Recompute particle cells, set its acceleration to its new cell
-    #pragma omp for schedule(static)
-    for (int i = 0; i < num_parts; ++i) {
-        parts[i].ax = get_cell_x(size, parts[i].x);
-        parts[i].ay = get_cell_y(size, parts[i].y);
-    }
+//    #pragma omp for schedule(static)
+//    for (int i = 0; i < num_parts; ++i) {
+//        parts[i].ax = get_cell_x(size, parts[i].x);
+//        parts[i].ay = get_cell_y(size, parts[i].y);
+//    }
 
     #pragma omp barrier
     if (id == 0) {
