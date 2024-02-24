@@ -114,13 +114,18 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    #pragma omp barrier
+    // Recompute particle cells, set its acceleration to its new cell
+    #pragma omp for schedule(static)
+    for (int i = 0; i < num_parts; ++i) {
+        parts[i].ax = get_cell_x(size, parts[i].x);
+        parts[i].ay = get_cell_y(size, parts[i].y);
+    }
 
-    // TODO one might consider parallelizing recomputing cells
+    #pragma omp barrier
     if (id == 0) {
-        // Recompute particle cells
         for (int i = 0; i < num_parts; ++i) {
-            cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(parts[i]);
+            cells.at((int) parts[i].ax).at((int) parts[i].ay).push_back(parts[i]);
         }
     }
+    #pragma omp barrier
 }
