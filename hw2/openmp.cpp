@@ -99,7 +99,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     int id = omp_get_thread_num();
 
-    #pragma omp for schedule(dynamic)
+    #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
@@ -143,8 +143,10 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    }
 
     #pragma omp barrier
+
     if (id == 0) {
         for (int i = 0; i < num_parts; ++i) {
+
             cells.at((int) parts[i].ax).at((int) parts[i].ay).push_back(parts[i]);
         }
     }
