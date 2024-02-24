@@ -9,11 +9,11 @@ double cellSize = 0.;
 std::vector<std::vector<std::vector<particle_t>>> cells;
 
 int get_cell_x(double size, double x) {
-    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
+    return (int) ((num_cells-1) * x / size);
 }
 
 int get_cell_y(double size, double y) {
-    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
+    return (int) ((num_cells-1) * y / size);
 }
 
 // Apply the force from neighbor to particle
@@ -94,14 +94,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    #pragma omp barrier
+//    #pragma omp barrier
 
     // Move Particles
-
-    // TODO false sharing ? maybe...
-    #pragma omp for
-    for (int i = 0; i < num_parts; ++i) {
-        move(parts[i], size);
+    if (id == 0) {
+        for (int i = 0; i < num_parts; ++i) {
+            move(parts[i], size);
+        }
     }
 
     // TODO one might consider parallelizing clearing the cells
@@ -114,7 +113,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    #pragma omp barrier
+//    #pragma omp barrier
 
     // TODO one might consider parallelizing recomputing cells
     if (id == 0) {
