@@ -4,7 +4,6 @@
 #include <vector>
 
 int num_cells = 0;
-double cellSize = 0.;
 
 std::vector<std::vector<std::vector<particle_t>>> cells;
 std::vector<std::vector<omp_lock_t>> gridLocks;
@@ -37,27 +36,6 @@ void apply_force(particle_t& particle, particle_t& neighbor) {
     particle.ay += coef * dy;
 }
 
-// Integrate the ODE
-void move(particle_t& p, double size) {
-    // Slightly simplified Velocity Verlet integration
-    // Conserves energy better than explicit Euler method
-    p.vx += p.ax * dt;
-    p.vy += p.ay * dt;
-    p.x += p.vx * dt;
-    p.y += p.vy * dt;
-
-    // Bounce from walls
-    while (p.x < 0 || p.x > size) {
-        p.x = p.x < 0 ? -p.x : 2 * size - p.x;
-        p.vx = -p.vx;
-    }
-
-    while (p.y < 0 || p.y > size) {
-        p.y = p.y < 0 ? -p.y : 2 * size - p.y;
-        p.vy = -p.vy;
-    }
-}
-
 // Integrate the ODE, and store the new position in its acceleration field
 void move_acc(particle_t& p, double size) {
     // Slightly simplified Velocity Verlet integration
@@ -81,7 +59,6 @@ void move_acc(particle_t& p, double size) {
 
 void init_simulation(particle_t* parts, int num_parts, double size) {
     num_cells = floor(size / cutoff);
-    cellSize = size / num_cells;
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
 
     // initialize the grid of cells
@@ -138,28 +115,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
         int cell_x = get_cell_x(size, parts[i].x);
         int cell_y = get_cell_y(size, parts[i].y);
-//
-//        parts[i].ax = cell_x;
-//        parts[i].ay = cell_y;
 
         omp_set_lock(&gridLocks.at(cell_x).at(cell_y));
         cells.at(cell_x).at(cell_y).push_back(parts[i]);
         omp_unset_lock(&gridLocks.at(cell_x).at(cell_y));
     }
 
-    // Recompute particle cells, set its acceleration to its new cell
-//    #pragma omp for schedule(static)
-//    for (int i = 0; i < num_parts; ++i) {
-//        parts[i].ax = get_cell_x(size, parts[i].x);
-//        parts[i].ay = get_cell_y(size, parts[i].y);
-//    }
-
-//    #pragma omp barrier
-//
-//    if (id == 0) {
-//        for (int i = 0; i < num_parts; ++i) {
-//            cells.at((int) parts[i].ax).at((int) parts[i].ay).push_back(parts[i]);
-//        }
-//    }
     #pragma omp barrier
 }
