@@ -93,16 +93,19 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                 }
             }
         }
-        // TODO what if we move the particle rn ? THEN barrier before clearing
+
+        move(parts[i], size);
+
+        // TODO what if we recompute the particle cell rn ? and set it later (after clearing) ?
     }
 
     # pragma omp barrier
 
     // TODO one might consider parallelizing this, but it's high-cost-low-return rn
-    #pragma omp for schedule(static)
-    for (int i = 0; i < num_parts; ++i) {
-        move(parts[i], size);
-    }
+//    #pragma omp for schedule(static)
+//    for (int i = 0; i < num_parts; ++i) {
+//        move(parts[i], size);
+//    }
 
     // TODO one might consider parallelizing clearing the cells
     if (id == 0) {
