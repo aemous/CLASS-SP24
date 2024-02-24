@@ -81,7 +81,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // TODO one might consider parallelizing force computation
 
     // the simplest way, just slap omp for on this loop. it's embarrassingly parallel, but there might be false sharing
-    #pragma omp for
+    #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
@@ -93,19 +93,16 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
                 }
             }
         }
-
-        move(parts[i], size);
-
         // TODO what if we recompute the particle cell rn ? and set it later (after clearing) ?
     }
 
     # pragma omp barrier
 
     // TODO one might consider parallelizing this, but it's high-cost-low-return rn
-//    #pragma omp for schedule(static)
-//    for (int i = 0; i < num_parts; ++i) {
-//        move(parts[i], size);
-//    }
+    #pragma omp for schedule(static)
+    for (int i = 0; i < num_parts; ++i) {
+        move(parts[i], size);
+    }
 
     // TODO one might consider parallelizing clearing the cells
     if (id == 0) {
