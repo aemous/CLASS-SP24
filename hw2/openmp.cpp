@@ -72,7 +72,7 @@ void move_acc(particle_t& p, double size) {
         p.vx = -p.vx;
     }
 
-    while (p.y < 0 || p.y > size) {
+    while (p.ay < 0 || p.ay > size) {
         p.ay = p.ay < 0 ? -p.ay : 2 * size - p.ay;
         p.vy = -p.vy;
     }
