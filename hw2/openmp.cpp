@@ -7,6 +7,7 @@ int num_cells = 0;
 double cellSize = 0.;
 
 std::vector<std::vector<std::vector<particle_t>>> cells;
+std::vector<std::vector<omp_lock_t>> gridLocks;
 
 int get_cell_x(double size, double x) {
     return (int) ((num_cells-1) * x / size);
@@ -91,6 +92,11 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
         }
     }
 
+    // initialize grid of locks
+    for (unsigned int i = 0; i < num_cells; ++i) {
+        gridLocks.push_back(std::vector<omp_lock_t>(num_cells));
+    }
+
     for (int p = 0; p < num_parts; ++p) {
         cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(parts[p]);
     }
@@ -117,12 +123,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     # pragma omp barrier
 
-    if (id == 0) {
-        // Clear cells
-        for (int i = 0; i < num_cells; ++i) {
-            for (int j = 0; j < num_cells; ++j) {
-                cells.at(i).at(j).clear();
-            }
+    // Clear cells
+    #pragma omp for
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            cells.at(i).at(j).clear();
         }
     }
 
@@ -133,11 +138,15 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         parts[i].x = parts[i].ax;
         parts[i].y = parts[i].ay;
 
-        parts[i].ax = get_cell_x(size, parts[i].x);
-        parts[i].ay = get_cell_y(size, parts[i].y);
+        int cell_x = get_cell_x(size, parts[i].x);
+        int cell_y = get_cell_y(size, parts[i].y);
+//
+//        parts[i].ax = cell_x;
+//        parts[i].ay = cell_y;
 
-        # pragma omp critical
-        cells.at((int) parts[i].ax).at((int) parts[i].ay).push_back(parts[i]);
+        omp_set_lock(&gridLocks.at(cell_x).at(cell_y));
+        cells.at(cell_x).at(cell_y).push_back(parts[i]);
+        omp_unset_lock(&gridLocks.at(cell_x).at(cell_y));
     }
 
     // Recompute particle cells, set its acceleration to its new cell
