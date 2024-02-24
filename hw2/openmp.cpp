@@ -118,6 +118,15 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     # pragma omp barrier
 
+    if (id == 0) {
+        // Clear cells
+        for (int i = 0; i < num_cells; ++i) {
+            for (int j = 0; j < num_cells; ++j) {
+                cells.at(i).at(j).clear();
+            }
+        }
+    }
+
     // TODO one might consider parallelizing this, but it's high-cost-low-return rn
     #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
@@ -126,16 +135,6 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
         parts[i].ax = get_cell_x(size, parts[i].x);
         parts[i].ay = get_cell_y(size, parts[i].y);
-    }
-
-    // TODO one might consider parallelizing clearing the cells
-    if (id == 0) {
-        // Clear cells
-        for (int i = 0; i < num_cells; ++i) {
-            for (int j = 0; j < num_cells; ++j) {
-                cells.at(i).at(j).clear();
-            }
-        }
     }
 
     // Recompute particle cells, set its acceleration to its new cell
