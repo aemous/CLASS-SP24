@@ -94,13 +94,14 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-//    #pragma omp barrier
+    #pragma omp barrier
 
     // Move Particles
-    if (id == 0) {
-        for (int i = 0; i < num_parts; ++i) {
-            move(parts[i], size);
-        }
+
+    // TODO false sharing ? maybe...
+    #pragma omp for
+    for (int i = 0; i < num_parts; ++i) {
+        move(parts[i], size);
     }
 
     // TODO one might consider parallelizing clearing the cells
@@ -113,7 +114,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-//    #pragma omp barrier
+    #pragma omp barrier
 
     // TODO one might consider parallelizing recomputing cells
     if (id == 0) {
