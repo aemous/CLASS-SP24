@@ -3,17 +3,15 @@
 #include <vector>
 
 int num_cells = 0;
-double cellSize = 0.;
 
-std::vector<std::vector<std::vector<particle_t>>> cells;
+//std::vector<std::vector<std::vector<particle_t>>> cells;
+std::vector<std::vector<std::vector<particle_t*>>> cells;
 
 int get_cell_x(double size, double x) {
-//    return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
     return (int) ((num_cells-1) * x / size);
 }
 
 int get_cell_y(double size, double y) {
-//    return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
     return (int) ((num_cells-1) * y / size);
 }
 
@@ -64,49 +62,51 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // algorithm begins. Do not do any particle simulation here
 
     num_cells = floor(size / cutoff);
-    cellSize = size / num_cells;
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
+//        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
+        cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::vector<particle_t>(exp_parts_per_cell + 10));
+            cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell + 10));
         }
     }
 
     for (int p = 0; p < num_parts; ++p) {
-        cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(parts[p]);
-    }
-}
-
-void naive_simulate(particle_t* parts, int num_parts, double size) {
-    for (int i = 0; i < num_parts; ++i) {
-        parts[i].ax = parts[i].ay = 0;
-        for (int j = 0; j < num_parts; ++j) {
-            apply_force(parts[i], parts[j]);
-        }
-    }
-
-    // Move Particles
-    for (int i = 0; i < num_parts; ++i) {
-        move(parts[i], size);
+        cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(&parts[p]);
     }
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    for (int i = 0; i < num_parts; ++i) {
-        parts[i].ax = parts[i].ay = 0;
-        int cell_x = get_cell_x(size, parts[i].x);
-        int cell_y = get_cell_y(size, parts[i].y);
-        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-                for (auto & kk : cells.at(ii).at(jj)) {
-                    apply_force(parts[i], kk);
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            for (auto & k : cells.at(i).at(j)) {
+                k->ax = k->ay = 0;
+                int cell_x = get_cell_x(size, k->x);
+                int cell_y = get_cell_y(size, k->y);
+                for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+                    for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+                        for (auto & kk : cells.at(ii).at(jj)) {
+                            apply_force(*k, *kk);
+                        }
+                    }
                 }
             }
         }
     }
+//    for (int i = 0; i < num_parts; ++i) {
+//        parts[i].ax = parts[i].ay = 0;
+//        int cell_x = get_cell_x(size, parts[i].x);
+//        int cell_y = get_cell_y(size, parts[i].y);
+//        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+//            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+//                for (auto & kk : cells.at(ii).at(jj)) {
+//                    apply_force(parts[i], kk);
+//                }
+//            }
+//        }
+//    }
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
@@ -122,6 +122,6 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     // Recompute particle cells
     for (int i = 0; i < num_parts; ++i) {
-        cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(parts[i]);
+        cells.at(get_cell_x(size, parts[i].x)).at(get_cell_y(size, parts[i].y)).push_back(&parts[i]);
     }
 }
