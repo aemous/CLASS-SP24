@@ -7,6 +7,10 @@
 #include <random>
 #include <vector>
 
+// OMP:
+// 1. Binning: omp for on binning. split particles among threads , vector insertions are thread-safe
+// 2.
+
 // =================
 // Helper Functions
 // =================
@@ -136,7 +140,6 @@ int main(int argc, char** argv) {
                 save(fsave, parts, num_parts, size);
             }
 
-//            std::cout << "Step " << step << std::endl;
         }
     }
 

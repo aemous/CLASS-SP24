@@ -7,12 +7,10 @@ double cellSize = 0.;
 
 std::vector<std::vector<std::vector<particle_t>>> cells;
 
-// TODO this may change if our cells end up not being square after parallelism
 int get_cell_x(double size, double x) {
     return (int) ((num_cells - 1) * std::min((x / (size - cellSize)), 1.0));
 }
 
-// TODO this may change if our cells end up not being square after parallelism
 int get_cell_y(double size, double y) {
     return (int) ((num_cells-1) * std::min((y / (size - cellSize)), 1.0));
 }
@@ -63,7 +61,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // that you may need. This function will be called once before the
     // algorithm begins. Do not do any particle simulation here
 
-    // TODO when we parallelize, the below might be a function of num processors/threads
     num_cells = floor(size / cutoff);
     cellSize = size / num_cells;
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
@@ -76,8 +73,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    // lets remove from init, and move to beginning of simulate
-    // map the particles to their proper cells based on their position
     for (int p = 0; p < num_parts; ++p) {
         cells.at(get_cell_x(size, parts[p].x)).at(get_cell_y(size, parts[p].y)).push_back(parts[p]);
     }
@@ -98,20 +93,6 @@ void naive_simulate(particle_t* parts, int num_parts, double size) {
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    // clear cells
-
-    // map to the bin
-//    naive_simulate(parts, num_parts, size);
-//    return;
-
-    // for each bin,
-    // for each neighbor bin
-    // for each particle in the bin
-    // do the thing
-
-    // ohh, it actually might be best to do: for every particle, for every neighbor bin, for every particle
-    // we'd still make use of the spatial locality of storing the copies
-
     for (int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
