@@ -99,8 +99,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     int id = omp_get_thread_num();
 
-    // the simplest way, just slap omp for on this loop. it's embarrassingly parallel, but there might be false sharing
-    #pragma omp for schedule(static)
+    #pragma omp for schedule(dynamic)
     for (int i = 0; i < num_parts; ++i) {
         parts[i].ax = parts[i].ay = 0;
         int cell_x = get_cell_x(size, parts[i].x);
@@ -127,7 +126,6 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    // TODO one might consider parallelizing this, but it's high-cost-low-return rn
     #pragma omp for schedule(static)
     for (int i = 0; i < num_parts; ++i) {
         parts[i].x = parts[i].ax;
