@@ -77,35 +77,22 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    for (int i = 0; i < num_parts; ++i) {
-        parts[i].ax = parts[i].ay = 0;
-        int cell_x = get_cell_x(size, parts[i].x);
-        int cell_y = get_cell_y(size, parts[i].y);
-        for (unsigned int ii = std::max(0, cell_x - 1); ii <= std::min(num_cells - 1, cell_x + 1); ++ii) {
-            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells - 1, cell_y + 1); ++jj) {
-                for (auto &kk: cells.at(ii).at(jj)) {
-                    apply_force(parts[i], *kk);
+    for (int i = 0; i < num_cells; ++i) {
+        for (int j = 0; j < num_cells; ++j) {
+            for (auto & k : cells.at(i).at(j)) {
+                k->ax = k->ay = 0;
+                int cell_x = get_cell_x(size, k->x);
+                int cell_y = get_cell_y(size, k->y);
+                for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+                    for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+                        for (auto & kk : cells.at(ii).at(jj)) {
+                            apply_force(*k, *kk);
+                        }
+                    }
                 }
             }
         }
     }
-//    }
-//    for (int i = 0; i < num_cells; ++i) {
-//        for (int j = 0; j < num_cells; ++j) {
-//            for (auto & k : cells.at(i).at(j)) {
-//                k->ax = k->ay = 0;
-//                int cell_x = get_cell_x(size, k->x);
-//                int cell_y = get_cell_y(size, k->y);
-//                for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-//                    for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-//                        for (auto & kk : cells.at(ii).at(jj)) {
-//                            apply_force(*k, *kk);
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
