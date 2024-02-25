@@ -4,7 +4,6 @@
 
 int num_cells = 0;
 
-//std::vector<std::vector<std::vector<particle_t>>> cells;
 std::vector<std::vector<std::vector<particle_t*>>> cells;
 
 int get_cell_x(double size, double x) {
@@ -66,7 +65,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-//        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
         cells.push_back(std::vector<std::vector<particle_t*>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
             cells.at(i).push_back(std::vector<particle_t*>(exp_parts_per_cell + 10));
@@ -95,18 +93,6 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
             }
         }
     }
-//    for (int i = 0; i < num_parts; ++i) {
-//        parts[i].ax = parts[i].ay = 0;
-//        int cell_x = get_cell_x(size, parts[i].x);
-//        int cell_y = get_cell_y(size, parts[i].y);
-//        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-//            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-//                for (auto & kk : cells.at(ii).at(jj)) {
-//                    apply_force(parts[i], kk);
-//                }
-//            }
-//        }
-//    }
 
     // Move Particles
     for (int i = 0; i < num_parts; ++i) {
