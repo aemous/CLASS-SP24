@@ -58,7 +58,7 @@ void move_acc(particle_t& p, double size) {
 }
 
 void init_simulation(particle_t* parts, int num_parts, double size) {
-    num_cells = floor(size / cutoff);
+    num_cells = floor(size / (250 * cutoff));
     int exp_parts_per_cell = ceil(1.0 * num_parts / num_cells);
 
     // initialize the grid of cells
