@@ -124,7 +124,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize grid of locks
     for (unsigned int i = 0; i < num_cells; ++i) {
-        grid_locks.insert(thrust::device_vector<omp_lock_t>(num_cells));
+        grid_locks[i].insert(thrust::device_vector<omp_lock_t>(num_cells));
     }
 }
 
@@ -133,7 +133,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // Clear bins
     for (unsigned int i = 0; i < num_cells; ++i) {
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).at(j).clear();
+            cells[i][j].clear();
         }
     }
 
