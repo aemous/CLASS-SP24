@@ -11,7 +11,7 @@ int num_cells = 0;
 // TODO after we achieve EC, one might consider thinking about warps
 
 //std::vector<std::vector<std::vector<particle_t>>> cells;
-thrust::device_vector<thrust::device_vector<particle_t>>> cells;
+thrust::device_vector<thrust::device_vector<thrust::device_vector<particle_t>>> cells;
 thrust::device_vector<thrust::device_vector<omp_lock_t>> grid_locks;
 
 // TODO do we need these on the gpu? probably
