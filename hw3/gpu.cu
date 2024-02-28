@@ -36,7 +36,7 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t& neighbor) {
     particle.ay += coef * dy;
 }
 
-__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts) {
+__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -138,7 +138,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
     // Compute forces
-    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, d_cells, num_parts);
+    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, d_cells, num_parts, size);
 
     // Move particles
     move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
