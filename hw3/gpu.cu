@@ -10,11 +10,11 @@ int num_cells = 0;
 
 std::vector<std::vector<std::vector<particle_t>>> cells;
 
-__global__ int get_cell_x(double size, double x) {
+int get_cell_x(double size, double x) {
     return (int) ((num_cells-1) * x / size);
 }
 
-__global__ int get_cell_y(double size, double y) {
+int get_cell_y(double size, double y) {
     return (int) ((num_cells-1) * y / size);
 }
 
