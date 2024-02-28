@@ -8,33 +8,14 @@
 int blks;
 int num_cells = 0;
 
-// TODO after we achieve EC, one might consider thinking about warps
+std::vector<std::vector<std::vector<particle_t>>> cells;
 
-//std::vector<std::vector<std::vector<particle_t>>> cells;
-thrust::device_vector<thrust::device_vector<thrust::device_vector<particle_t>>> cells;
-thrust::device_vector<thrust::device_vector<omp_lock_t>> grid_locks;
-
-// TODO do we need these on the gpu? probably
-__device__ int get_cell_x(double size, double x) {
+__global__ int get_cell_x(double size, double x) {
     return (int) ((num_cells-1) * x / size);
 }
 
-__device__ int get_cell_y(double size, double y) {
+__global__ int get_cell_y(double size, double y) {
     return (int) ((num_cells-1) * y / size);
-}
-
-__global__ void bin_particles_gpu(particle_t* particles, int num_parts) {
-    // Get thread (particle) ID
-    int tid = threadIdx.x + blockIdx.x * blockDim.x;
-    if (tid >= num_parts)
-        return;
-
-    int cell_x = get_cell_x(size, particles[tid].x);
-    int cell_y = get_cell_y(size, particles[tid].y);
-
-    omp_set_lock(&grid_locks[cell_x][cell_y]);
-    cells[cell_x][cell_y].insert(particles[tid]);
-    omp_unset_lock(&grid_locks[cell_x][cell_y]);
 }
 
 __device__ void apply_force_gpu(particle_t& particle, particle_t& neighbor) {
@@ -55,7 +36,7 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t& neighbor) {
     particle.ay += coef * dy;
 }
 
-__global__ void compute_forces_gpu(particle_t* particles, int num_parts) {
+__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -65,12 +46,8 @@ __global__ void compute_forces_gpu(particle_t* particles, int num_parts) {
     int cell_x = get_cell_x(size, particles[tid].x);
     int cell_y = get_cell_y(size, particles[tid].y);
 
-    for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-        for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-            for (auto & kk : cells[ii][jj]) {
-                apply_force_gpu(particles[tid], kk);
-            }
-        }
+    for (unsigned int i = 0; i < d_cells[cell_x + num_cells*cell_y].size(); ++i) {
+        apply_force_gpu(particles[tid], d_cells[cell_x + num_cells*cell_y][i]);
     }
 //    for (int j = 0; j < num_parts; j++)
 //        apply_force_gpu(particles[tid], particles[j]);
@@ -112,24 +89,26 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     // parts live in GPU memory
     // Do not do any particle simulation here
 
-    blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS;
+    blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
 
+    // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.insert(thrust::device_vector<thrust::device_vector<particle_t>>(num_cells));
+        cells.insert(std::vector<std::vector<particle_t>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells[i].insert(thrust::device_vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
+            cells.at(i).insert(std::vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
         }
-    }
-
-    // initialize grid of locks
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        grid_locks[i].insert(thrust::device_vector<omp_lock_t>(num_cells));
     }
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    // TODO one might consider parallelizing the clearing across gpu threads
+    // entire plan (phase I):
+        // store a 3D vector of particle copies on the CPU
+        // Rebin particles entirely on the CPU.
+        // Copy the bins to the GPU.
+        // On the GPU, compute the force for the thread's particle, using the GPU-stored bin for the particle
+        // On the GPU, move the thread's particle
+
     // Clear bins
     for (unsigned int i = 0; i < num_cells; ++i) {
         for (unsigned int j = 0; j < num_cells; ++j) {
@@ -137,11 +116,29 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         }
     }
 
-    // Rebin particles
-    bin_particles_gpu<<<blks, NUM_THREADS>>>(parts, num_parts);
+    // bin the particles
+    for (int i = 0; i < num_parts; ++i) {
+        int cell_x = get_cell_x(size, parts[i].x);
+        int cell_y = get_cell_y(size, parts[i].y);
+        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
+            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
+                cells.at(ii).at(jj).insert(parts[i]);
+            }
+        }
+    }
 
+    // copy the cells to the GPU
+    thrust::device_vector<particle_t> d_cells[num_cells*num_cells];
+    for (unsigned int i = 0; i < num_cells; ++i) {
+        for (unsigned int j = 0; j < num_cells; ++j) {
+            d_cells[j + i*num_cells] = thrust::device_vector<particle_t>(
+                    cells.at(i).at(j).begin(),
+                    cells.at(i).at(j).end()
+            );
+        }
+    }
     // Compute forces
-    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, num_parts);
+    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, d_cells, num_parts);
 
     // Move particles
     move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
