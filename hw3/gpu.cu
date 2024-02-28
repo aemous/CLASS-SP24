@@ -122,7 +122,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         int cell_y = get_cell_y(size, parts[i].y);
         for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
             for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-                cells.at(ii).at(jj).insert(parts[i]);
+                cells.at(ii).at(jj).push_back(parts[i]);
             }
         }
     }
