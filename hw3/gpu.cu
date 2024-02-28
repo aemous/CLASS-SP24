@@ -32,9 +32,9 @@ __global__ void bin_particles_gpu(particle_t* particles, int num_parts) {
     int cell_x = get_cell_x(size, particles[tid].x);
     int cell_y = get_cell_y(size, particles[tid].y);
 
-    omp_set_lock(&grid_locks.at(cell_x).at(cell_y));
-    cells.at(cell_x).at(cell_y).insert(particles[tid]);
-    omp_unset_lock(&grid_locks.at(cell_x).at(cell_y));
+    omp_set_lock(&grid_locks[cell_x][cell_y]);
+    cells[cell_x][cell_y].insert(particles[tid]);
+    omp_unset_lock(&grid_locks[cell_x][cell_y]);
 }
 
 __device__ void apply_force_gpu(particle_t& particle, particle_t& neighbor) {
@@ -67,7 +67,7 @@ __global__ void compute_forces_gpu(particle_t* particles, int num_parts) {
 
     for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
         for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-            for (auto & kk : cells.at(ii).at(jj)) {
+            for (auto & kk : cells[ii][jj]) {
                 apply_force_gpu(particles[tid], kk);
             }
         }
@@ -118,7 +118,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     for (unsigned int i = 0; i < num_cells; ++i) {
         cells.insert(thrust::device_vector<thrust::device_vector<particle_t>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).insert(thrust::device_vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
+            cells[i].insert(thrust::device_vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
         }
     }
 
