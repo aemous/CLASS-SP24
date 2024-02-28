@@ -94,9 +94,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     // initialize the grid of cells
     for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.insert(std::vector<std::vector<particle_t>>(num_cells));
+        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
         for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).insert(std::vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
+            cells.at(i).push_back(std::vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
         }
     }
 }
