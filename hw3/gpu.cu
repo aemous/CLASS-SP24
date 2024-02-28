@@ -43,9 +43,11 @@ __global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<
         return;
 
     particles[tid].ax = particles[tid].ay = 0;
-    int cell_x = get_cell_x(size, particles[tid].x);
-    int cell_y = get_cell_y(size, particles[tid].y);
-
+//    int cell_x = get_cell_x(size, particles[tid].x);
+    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
+//    int cell_y = get_cell_y(size, particles[tid].y);
+    int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
+//
     for (unsigned int i = 0; i < d_cells[cell_x + num_cells*cell_y].size(); ++i) {
         apply_force_gpu(particles[tid], d_cells[cell_x + num_cells*cell_y][i]);
     }
