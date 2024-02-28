@@ -36,7 +36,7 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t const &neighbor
     particle.ay += coef * dy;
 }
 
-__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts, num_cells, int size) {
+__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
