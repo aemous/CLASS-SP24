@@ -18,7 +18,7 @@ int get_cell_y(double size, double y) {
     return (int) ((num_cells-1) * y / size);
 }
 
-__device__ void apply_force_gpu(particle_t& particle, particle_t& neighbor) {
+__device__ void apply_force_gpu(particle_t& particle, particle_t const &neighbor) {
     double dx = neighbor.x - particle.x;
     double dy = neighbor.y - particle.y;
     double r2 = dx * dx + dy * dy;
