@@ -1,14 +1,14 @@
 #include "common.h"
 #include <cuda.h>
 #include <thrust/device_vector.h>
+#include <thrust/scan.h>
+#include <thrust/execution_policy.h>
 
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
 int blks;
 int num_cells = 0;
-
-std::vector<std::vector<std::vector<particle_t>>> cells;
 
 int get_cell_x(double size, double x) {
     return (int) ((num_cells-1) * x / size);
@@ -36,23 +36,62 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t const &neighbor
     particle.ay += coef * dy;
 }
 
-__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<particle_t>* d_cells, int num_parts, int num_cells, int size) {
+// in this function, we want to be able to access all of the bins in GPU memory, and each bin can be a different size.
+__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<int>& bin_counts, thrust::device_vector<int>& sorted_particles, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
         return;
 
+    // zero the particle's acceleration
     particles[tid].ax = particles[tid].ay = 0;
-//    int cell_x = get_cell_x(size, particles[tid].x);
+
+    // compute the bin for the cell
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
-//    int cell_y = get_cell_y(size, particles[tid].y);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
-//
-    for (unsigned int i = 0; i < d_cells[cell_x + num_cells*cell_y].size(); ++i) {
-        apply_force_gpu(particles[tid], d_cells[cell_x + num_cells*cell_y][i]);
+
+    // for every neighbor cell
+    for (unsigned int i = std::max(cell_x-1, 0); i < std::min(cell_x+1, num_cells); ++i) {
+        for (unsigned int j = std::max(cell_y-1, 0); j < std::min(cell_y+1, num_cells); ++j) {
+            int bin_idx = cell_x + cell_y*num_cells;
+            // for every particle in the cell
+            for (unsigned int k = bin_counts[bin_idx]; k < bin_counts[bin_idx+1]; ++k) {
+                int part_id = sorted_particles[k];
+                apply_force_gpu(particles[tid], particles[part_id]);
+            }
+        }
     }
+
 //    for (int j = 0; j < num_parts; j++)
 //        apply_force_gpu(particles[tid], particles[j]);
+}
+
+__global__ void compute_bin_counts_gpu(thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+    // Get thread (particle) ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= num_parts)
+        return;
+
+    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
+    int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
+
+    thrust::atomicAdd(bin_counts->begin() + cell_x + cell_y*num_cells, 1);
+}
+
+__global__ void compute_parts_sorted(thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+    // Get thread (particle) ID
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (tid >= num_parts)
+        return;
+
+    // compute the bin i for the part
+    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
+    int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
+
+    // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
+    int prev_last_part = thrust::atomicAdd(last_part->begin() + cell_x + cell_y*num_cells, 1);
+    // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
+    parts_sorted[bin_counts[cell_x + cell_y*num_cells] + prev_last_part + 1] = tid;
 }
 
 __global__ void move_gpu(particle_t* particles, int num_parts, double size) {
@@ -93,52 +132,35 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
-
-    // initialize the grid of cells
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        cells.push_back(std::vector<std::vector<particle_t>>(num_cells));
-        for (unsigned int j = 0; j < num_cells; ++j) {
-            cells.at(i).push_back(std::vector<particle_t>(ceil(1.0 * num_parts / num_cells) + 10));
-        }
-    }
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    // entire plan (phase I):
-        // store a 3D vector of particle copies on the CPU
-        // Rebin particles entirely on the CPU.
-        // Copy the bins to the GPU.
-        // On the GPU, compute the force for the thread's particle, using the GPU-stored bin for the particle
-        // On the GPU, move the thread's particle
+    thrust::device_vector<int> bin_counts(num_cells * num_cells + 1);
+    thrust::fill(bin_counts.begin(), bin_counts.end() - 1, 0);
+    bin_counts[num_cells*num_cells] = num_parts;
+    thrust::device_vector<int> last_part(num_cells * num_cells);
+    thrust::fill(last_part.begin(), last_part.end(), -1);
+    thrust::device_vector<int> sorted_particles(num_parts);
+    thrust::fill(sorted_particles.begin(), sorted_particles.end(), 0);
 
-    // Clear bins
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        for (unsigned int j = 0; j < num_cells; ++j) {
-            cells[i][j].clear();
-        }
-    }
+    // task: compute particle count per bin
+    // for each particle (per gpu core)
+        // compute the bin for the particle
+        // increment the particle count for that bin using thrust::atomicAdd
+    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(bin_counts, num_parts, num_cels, size);
 
-    // bin the particles
-    for (int i = 0; i < num_parts; ++i) {
-        int cell_x = get_cell_x(size, parts[i].x);
-        int cell_y = get_cell_y(size, parts[i].y);
-        for (unsigned int ii = std::max(0, cell_x-1); ii <= std::min(num_cells-1, cell_x+1); ++ii) {
-            for (unsigned int jj = std::max(0, cell_y - 1); jj <= std::min(num_cells-1, cell_y + 1); ++jj) {
-                cells.at(ii).at(jj).push_back(parts[i]);
-            }
-        }
-    }
+    // task: prefix sum particle counts
+    // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
+    thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
 
-    // copy the cells to the GPU
-    thrust::device_vector<particle_t> d_cells[num_cells*num_cells];
-    for (unsigned int i = 0; i < num_cells; ++i) {
-        for (unsigned int j = 0; j < num_cells; ++j) {
-            d_cells[j + i*num_cells] = thrust::device_vector<particle_t>(
-                    cells.at(i).at(j).begin(),
-                    cells.at(i).at(j).end()
-            );
-        }
-    }
+    // task: add the particle ids to a separate array parts_sorted
+    // initialize an array, 1 entry for each cell, called last_part, initialized to -1
+    // for each particle (per gpu core): then you compute
+        // compute the bin i for the part
+        // atomically increment last_part[i],
+        // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(sorted_particles, last_part, bin_counts, num_parts, num_cells, size);
+
     // Compute forces
     compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, d_cells, num_parts, num_cells, size);
 
