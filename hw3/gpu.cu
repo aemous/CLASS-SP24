@@ -162,7 +162,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // compute the bin i for the part
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
-    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, last_part, bin_counts, num_parts, num_cells, size);
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
 
     // Compute forces
     compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
