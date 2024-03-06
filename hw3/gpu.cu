@@ -1,7 +1,6 @@
 #include "common.h"
 #include <cuda.h>
 #include <thrust/device_vector.h>
-#include <thrust/atomic.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 
