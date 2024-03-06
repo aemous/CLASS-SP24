@@ -165,7 +165,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     compute_parts_sorted<<<blks, NUM_THREADS>>>(sorted_particles, last_part, bin_counts, num_parts, num_cells, size);
 
     // Compute forces
-    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, d_cells, num_parts, num_cells, size);
+    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
 
     // Move particles
     move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
