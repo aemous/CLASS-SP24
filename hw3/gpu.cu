@@ -7,6 +7,9 @@
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
+thrust::device_vector<int> bin_counts;
+thrust::device_vector<int> bin_end;
+thrust::device_vector<int> sorted_particles;
 int blks;
 int num_cells = 0;
 
@@ -55,7 +58,7 @@ __global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<
         for (unsigned int j = std::max(cell_y-1, 0); j < std::min(cell_y+1, num_cells); ++j) {
             int bin_idx = cell_x + cell_y*num_cells;
             // for every particle in the cell
-            for (unsigned int k = bin_counts[bin_idx]; k < bin_counts[bin_idx+1]; ++k) {
+            for (unsigned int k = bin_counts[bin_idx]; k < bin_idx == num_cells*num_cells-1 ? num_parts : bin_counts[bin_idx+1]; ++k) {
                 int part_id = sorted_particles[k];
                 apply_force_gpu(particles[tid], particles[part_id]);
             }
@@ -132,16 +135,16 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
+
+    bin_counts = thrust::device_vector<int>(num_cells * num_cells);
+    bin_end = thrust::device_vector<int>(num_cells * num_cells);
+    sorted_particles = thrust::device_vector<int>(num_parts);
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
-    thrust::device_vector<int> bin_counts(num_cells * num_cells + 1);
-    thrust::fill(bin_counts.begin(), bin_counts.end() - 1, 0);
-    bin_counts[num_cells*num_cells] = num_parts;
-    thrust::device_vector<int> last_part(num_cells * num_cells);
-    thrust::fill(last_part.begin(), last_part.end(), -1);
-    thrust::device_vector<int> sorted_particles(num_parts);
-    thrust::fill(sorted_particles.begin(), sorted_particles.end(), 0);
+    // reset the vectors that support concurrent binning for computing via gpu
+    thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
+    thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
     // task: compute particle count per bin
     // for each particle (per gpu core)
