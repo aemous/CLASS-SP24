@@ -78,7 +78,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vec
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
 
-    thrust::atomic_add(bin_counts->begin() + cell_x + cell_y*num_cells, 1);
+    atomicAdd(bin_counts->begin() + cell_x + cell_y*num_cells, 1);
 }
 
 __global__ void compute_parts_sorted(particle_t* particles, thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
@@ -92,7 +92,7 @@ __global__ void compute_parts_sorted(particle_t* particles, thrust::device_vecto
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
 
     // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
-    int prev_last_part = thrust::atomic_add(last_part->begin() + cell_x + cell_y*num_cells, 1);
+    int prev_last_part = atomicAdd(last_part->begin() + cell_x + cell_y*num_cells, 1);
     // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
     parts_sorted[bin_counts[cell_x + cell_y*num_cells] + prev_last_part + 1] = tid;
 }
