@@ -69,7 +69,7 @@ __global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<
 //        apply_force_gpu(particles[tid], particles[j]);
 }
 
-__global__ void compute_bin_counts_gpu(thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -81,7 +81,7 @@ __global__ void compute_bin_counts_gpu(thrust::device_vector<int>& bin_counts, i
     thrust::atomicAdd(bin_counts->begin() + cell_x + cell_y*num_cells, 1);
 }
 
-__global__ void compute_parts_sorted(thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_parts_sorted(particle_t* particles, thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -162,7 +162,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // compute the bin i for the part
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
-    compute_parts_sorted<<<blks, NUM_THREADS>>>(sorted_particles, last_part, bin_counts, num_parts, num_cells, size);
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, last_part, bin_counts, num_parts, num_cells, size);
 
     // Compute forces
     compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
