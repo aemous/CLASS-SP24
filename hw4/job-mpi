@@ -1,0 +1,13 @@
+#!/bin/bash
+#SBATCH -N 1
+#SBATCH -C cpu
+#SBATCH -q debug
+#SBATCH -J mpitest
+#SBATCH --ntasks-per-node=32
+#SBATCH -t 00:30:00
+
+#modules
+# module load openmpi
+
+#run the application:
+srun ./mpi -n 1000 -s 1
