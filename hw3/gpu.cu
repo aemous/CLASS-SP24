@@ -71,7 +71,7 @@ __global__ void compute_forces_gpu(particle_t* particles, int* bin_counts, int* 
 //        apply_force_gpu(particles[tid], particles[j]);
 }
 
-__global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_ptr<int> bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -79,8 +79,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, i
 
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
-    int* addr = bin_counts + cell_x + cell_y*num_cells;
-    atomicAdd(addr, 1);
+    atomicAdd(bin_counts + cell_x + cell_y*num_cells, 1);
 }
 
 __global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, int* last_part, int* bin_counts, int num_parts, int num_cells, int size) {
@@ -158,13 +157,14 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle (per gpu core)
         // compute the bin for the particle
         // increment the particle count for that bin using thrust::atomicAdd
-    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, thrust::raw_pointer_cast(bin_counts.data()), num_parts, num_cells, size);
+    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), num_parts, num_cells, size);
 
+    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
 //    for (const int& it : bin_counts) {
 //        std::cout << "Count: " << it << std::endl;
 //    }
-    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
+//    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
 //    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
