@@ -1,15 +1,16 @@
 #include "common.h"
 #include <cuda.h>
 #include <thrust/device_vector.h>
+#include <thrust/host_vector.h>
 #include <thrust/scan.h>
 #include <thrust/execution_policy.h>
 
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
-thrust::device_vector<int> bin_counts;
-thrust::device_vector<int> bin_end;
-thrust::device_vector<int> sorted_particles;
+thrust::host_vector<int> bin_counts;
+thrust::host_vector<int> bin_end;
+thrust::host_vector<int> sorted_particles;
 int blks;
 int num_cells = 0;
 
@@ -40,7 +41,7 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t const &neighbor
 }
 
 // in this function, we want to be able to access all of the bins in GPU memory, and each bin can be a different size.
-__global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<int>& bin_counts, thrust::device_vector<int>& sorted_particles, int num_parts, int num_cells, int size) {
+__global__ void compute_forces_gpu(particle_t* particles, thrust::host_vector<int>& bin_counts, thrust::host_vector<int>& sorted_particles, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -69,7 +70,7 @@ __global__ void compute_forces_gpu(particle_t* particles, thrust::device_vector<
 //        apply_force_gpu(particles[tid], particles[j]);
 }
 
-__global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_bin_counts_gpu(particle_t* particles, thrust::host_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -82,7 +83,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vec
     atomicAdd(rawAddr, 1);
 }
 
-__global__ void compute_parts_sorted(particle_t* particles, thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_parts_sorted(particle_t* particles, thrust::host_vector<int>& parts_sorted, thrust::host_vector<int>& last_part, thrust::host_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -139,9 +140,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
 
-    bin_counts = thrust::device_vector<int>(num_cells * num_cells);
-    bin_end = thrust::device_vector<int>(num_cells * num_cells);
-    sorted_particles = thrust::device_vector<int>(num_parts);
+    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
+    bin_end = thrust::host_vector<int>(num_cells * num_cells);
+    sorted_particles = thrust::host_vector<int>(num_parts);
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
