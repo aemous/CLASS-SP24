@@ -170,7 +170,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
 //    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
-    thrust::exclusive_scan(bin_counts.data(), bin_counts.end()[0], bin_counts.data());
+    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
