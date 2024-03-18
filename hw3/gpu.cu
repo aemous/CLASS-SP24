@@ -78,7 +78,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vec
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
     thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = bin_counts.begin() + cell_x + cell_y*num_cells;
-    int* rawAddr = thrust::raw_pointer_cast(&addr[0);
+    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
     atomicAdd(rawAddr, 1);
 }
 
