@@ -156,7 +156,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
 
     // print bin counts
-    for (int& it : bin_counts) {
+    for (const int& it : bin_counts) {
         std::cout << "Count: " << it << std::endl;
     }
 
