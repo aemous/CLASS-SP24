@@ -147,6 +147,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // reset the vectors that support concurrent binning for computing via gpu
+    thrust::device_vector<int> bin_counts_cpy = thrust::device_vector<int>(num_cells * num_cells);
     thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
     thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
@@ -167,7 +168,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts.begin());
+    thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts_cpy.begin());
     std::cout << "Completed exclusive scan compute" << std::endl;
 
 //    int sum = 0;
