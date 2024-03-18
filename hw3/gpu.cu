@@ -56,11 +56,12 @@ __global__ void compute_forces_gpu(particle_t* particles, int* bin_counts, int* 
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
 
     // for every neighbor cell
-    for (unsigned int i = cell_x-1 > 0 ? cell_x-1 : 0; i < cell_x+1 < num_cells ? cell_x+1 : num_cells; ++i) {
-        for (unsigned int j = cell_y-1 > 0 ? cell_y-1 : 0; j < cell_y+1 < num_cells ? cell_y+1 : num_cells; ++j) {
-            int bin_idx = cell_x + cell_y*num_cells;
+    for (unsigned int i = cell_x-1 > 0 ? cell_x-1 : 0; i < (cell_x+1 < num_cells ? cell_x+1 : num_cells); ++i) {
+        for (unsigned int j = cell_y-1 > 0 ? cell_y-1 : 0; j < (cell_y+1 < num_cells ? cell_y+1 : num_cells); ++j) {
+//            int bin_idx = cell_x + cell_y*num_cells;
+            int bin_idx = i + j*num_cells;
             // for every particle in the cell
-            for (unsigned int k = bin_counts[bin_idx]; k < bin_idx == num_cells*num_cells-1 ? num_parts : bin_counts[bin_idx+1]; ++k) {
+            for (unsigned int k = bin_counts[bin_idx]; k < (bin_idx == num_cells*num_cells-1 ? num_parts : bin_counts[bin_idx+1]); ++k) {
                 int part_id = sorted_particles[k];
                 apply_force_gpu(particles[tid], particles[part_id]);
             }
