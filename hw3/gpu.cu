@@ -147,7 +147,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // reset the vectors that support concurrent binning for computing via gpu
-    thrust::device_vector<int> bin_counts_cpy = thrust::device_vector<int>(num_cells * num_cells);
+    thrust::host_vector<int> bin_counts_cpy = thrust::host_vector<int>(num_cells * num_cells);
     thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
     thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
