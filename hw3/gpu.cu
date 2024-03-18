@@ -156,7 +156,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle (per gpu core)
         // compute the bin for the particle
         // increment the particle count for that bin using thrust::atomicAdd
-    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), num_parts, num_cells, size);
+    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, thrust::raw_pointer_cast(bin_counts.data()), num_parts, num_cells, size);
 
     // print bin counts
     for (const int& it : bin_counts) {
