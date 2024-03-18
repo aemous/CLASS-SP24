@@ -9,7 +9,7 @@
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
-thrust::device_vector<int> bin_counts;
+thrust::host_vector<int> bin_counts;
 thrust::device_vector<int> bin_end;
 thrust::device_vector<int> sorted_particles;
 int blks;
@@ -140,7 +140,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
 
-    bin_counts = thrust::device_vector<int>(num_cells * num_cells);
+    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
     bin_end = thrust::device_vector<int>(num_cells * num_cells);
     sorted_particles = thrust::device_vector<int>(num_parts);
 }
