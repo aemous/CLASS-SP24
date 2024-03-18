@@ -10,7 +10,7 @@
 
 // Put any static global variables here that you will use throughout the simulation.
 thrust::host_vector<int> bin_counts;
-thrust::device_vector<int> bin_end;
+thrust::host_vector<int> bin_end;
 thrust::device_vector<int> sorted_particles;
 int blks;
 int num_cells = 0;
@@ -94,9 +94,8 @@ __global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, i
 
     // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
 //    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
-    int* addr = last_part + cell_x + cell_y*num_cells;
 //    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
-    int prev_last_part = atomicAdd(addr, 1);
+    int prev_last_part = atomicAdd(last_part + cell_x + cell_y*num_cells, 1);
     // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
     parts_sorted[bin_counts[cell_x + cell_y*num_cells] + prev_last_part + 1] = tid;
 }
@@ -141,7 +140,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     num_cells = floor(size / cutoff);
 
     bin_counts = thrust::host_vector<int>(num_cells * num_cells);
-    bin_end = thrust::device_vector<int>(num_cells * num_cells);
+    bin_end = thrust::host_vector<int>(num_cells * num_cells);
     sorted_particles = thrust::device_vector<int>(num_parts);
 }
 
@@ -149,7 +148,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // reset the vectors that support concurrent binning for computing via gpu
 //    thrust::host_vector<int> bin_counts_cpy = thrust::host_vector<int>(num_cells * num_cells);
     thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
-//    thrust::fill(bin_end.begin(), bin_end.end(), -1);
+    thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
     std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
     std::cout << "Num cells: " << num_cells << std::endl;
@@ -189,8 +188,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // compute the bin i for the part
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
-//    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
-
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
+    std::cout << "Compute parts sorted complete" << std::endl;
     // Compute forces
 //    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
 
