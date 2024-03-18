@@ -78,7 +78,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vec
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
     int* addr = bin_counts.begin() + cell_x + cell_y*num_cells;
-    atomicAdd(addr, 1);
+    atomicAdd(&addr[0], 1);
 }
 
 __global__ void compute_parts_sorted(particle_t* particles, thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
