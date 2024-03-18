@@ -167,16 +167,18 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-//    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
-    int sum = 0;
+    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
+    std::cout << "Completed exclusive scan compute" << std::endl;
 
-    for (int i = 0; i < bin_counts.size(); ++i) {
-        int tmp = bin_counts[i];
-        bin_counts[i] = sum;
-        sum += tmp;
-    }
-
-    std::cout << "Final sum: " << sum << std::endl;
+//    int sum = 0;
+//
+//    for (int i = 0; i < bin_counts.size(); ++i) {
+//        int tmp = bin_counts[i];
+//        bin_counts[i] = sum;
+//        sum += tmp;
+//    }
+//
+//    std::cout << "Final sum: " << sum << std::endl;
     // TODO do a serial prefix sum working , return to exclusive scan if time
 //    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
 
