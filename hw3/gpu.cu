@@ -80,6 +80,8 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::device_vec
     thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = bin_counts.begin() + cell_x + cell_y*num_cells;
     int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
     atomicAdd(rawAddr, 1);
+
+    std::cout << "Particle " << tid << " assigned to bin " << cell_x << " , " << cell_y << std::endl;
 }
 
 __global__ void compute_parts_sorted(particle_t* particles, thrust::device_vector<int>& parts_sorted, thrust::device_vector<int>& last_part, thrust::device_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
