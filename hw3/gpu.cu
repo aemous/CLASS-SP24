@@ -8,9 +8,9 @@
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
-thrust::host_vector<int> bin_counts;
-thrust::host_vector<int> bin_end;
-thrust::host_vector<int> sorted_particles;
+thrust::device_vector<int> bin_counts;
+thrust::device_vector<int> bin_end;
+thrust::device_vector<int> sorted_particles;
 int blks;
 int num_cells = 0;
 
@@ -41,7 +41,7 @@ __device__ void apply_force_gpu(particle_t& particle, particle_t const &neighbor
 }
 
 // in this function, we want to be able to access all of the bins in GPU memory, and each bin can be a different size.
-__global__ void compute_forces_gpu(particle_t* particles, thrust::host_vector<int>& bin_counts, thrust::host_vector<int>& sorted_particles, int num_parts, int num_cells, int size) {
+__global__ void compute_forces_gpu(particle_t* particles, int* bin_counts, int* sorted_particles, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -70,7 +70,7 @@ __global__ void compute_forces_gpu(particle_t* particles, thrust::host_vector<in
 //        apply_force_gpu(particles[tid], particles[j]);
 }
 
-__global__ void compute_bin_counts_gpu(particle_t* particles, thrust::host_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -78,12 +78,12 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::host_vecto
 
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
-    thrust::detail::normal_iterator<int *> addr = bin_counts.begin() + cell_x + cell_y*num_cells;
+    int* addr = bin_counts + cell_x + cell_y*num_cells;
     int* rawAddr = &addr[0];
     atomicAdd(rawAddr, 1);
 }
 
-__global__ void compute_parts_sorted(particle_t* particles, thrust::host_vector<int>& parts_sorted, thrust::host_vector<int>& last_part, thrust::host_vector<int>& bin_counts, int num_parts, int num_cells, int size) {
+__global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, int* last_part, int* bin_counts, int num_parts, int num_cells, int size) {
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -95,7 +95,7 @@ __global__ void compute_parts_sorted(particle_t* particles, thrust::host_vector<
 
     // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
 //    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
-    thrust::detail::normal_iterator<int *> addr = last_part.begin() + cell_x + cell_y*num_cells;
+    int* addr = last_part + cell_x + cell_y*num_cells;
 //    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
     int* rawAddr = &addr[0];
     int prev_last_part = atomicAdd(rawAddr, 1);
@@ -142,9 +142,9 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
 
-    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
-    bin_end = thrust::host_vector<int>(num_cells * num_cells);
-    sorted_particles = thrust::host_vector<int>(num_parts);
+    bin_counts = thrust::device_vector<int>(num_cells * num_cells);
+    bin_end = thrust::device_vector<int>(num_cells * num_cells);
+    sorted_particles = thrust::device_vector<int>(num_parts);
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
@@ -156,7 +156,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle (per gpu core)
         // compute the bin for the particle
         // increment the particle count for that bin using thrust::atomicAdd
-    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
+    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), num_parts, num_cells, size);
 
     // print bin counts
     for (const int& it : bin_counts) {
