@@ -152,6 +152,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // increment the particle count for that bin using thrust::atomicAdd
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
 
+    // print bin counts
+    for (int& it : bin_counts) {
+        std::cout << "Count: " << it << std::endl;
+    }
+
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
     thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
