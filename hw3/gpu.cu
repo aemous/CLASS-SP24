@@ -191,8 +191,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
     std::cout << "Compute parts sorted complete" << std::endl;
     // Compute forces
-//    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
+    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), sorted_particles.data(), num_parts, num_cells, size);
+    std::cout << "Compute forces complete" << std::endl;
 
     // Move particles
-//    move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
+    move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
+    std::cout << "Move parts complete" << std::endl;
+
 }
