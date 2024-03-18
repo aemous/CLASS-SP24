@@ -78,8 +78,8 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, thrust::host_vecto
 
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
-    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = bin_counts.begin() + cell_x + cell_y*num_cells;
-    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
+    thrust::detail::normal_iterator<int *> addr = bin_counts.begin() + cell_x + cell_y*num_cells;
+    int* rawAddr = &addr[0];
     atomicAdd(rawAddr, 1);
 }
 
@@ -94,8 +94,10 @@ __global__ void compute_parts_sorted(particle_t* particles, thrust::host_vector<
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
 
     // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
-    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
-    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
+//    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
+    thrust::detail::normal_iterator<int *> addr = last_part.begin() + cell_x + cell_y*num_cells;
+//    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
+    int* rawAddr = &addr[0];
     int prev_last_part = atomicAdd(rawAddr, 1);
     // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
     parts_sorted[bin_counts[cell_x + cell_y*num_cells] + prev_last_part + 1] = tid;
