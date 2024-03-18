@@ -150,8 +150,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
     thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
-    std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
-    std::cout << "Num cells: " << num_cells << std::endl;
+//    std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
+//    std::cout << "Num cells: " << num_cells << std::endl;
 
     // task: compute particle count per bin
     // for each particle (per gpu core)
@@ -159,7 +159,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // increment the particle count for that bin using thrust::atomicAdd
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), num_parts, num_cells, size);
 
-    std::cout << "Completed binning compute" << std::endl;
+//    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
 //    for (const int& it : bin_counts) {
 //        std::cout << "Count: " << it << std::endl;
@@ -168,7 +168,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
     thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts.begin());
-    std::cout << "Completed exclusive scan compute" << std::endl;
+//    std::cout << "Completed exclusive scan compute" << std::endl;
 
 //    int sum = 0;
 //
@@ -189,13 +189,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
     compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
-    std::cout << "Compute parts sorted complete" << std::endl;
+//    std::cout << "Compute parts sorted complete" << std::endl;
     // Compute forces
     compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), sorted_particles.data(), num_parts, num_cells, size);
-    std::cout << "Compute forces complete" << std::endl;
+//    std::cout << "Compute forces complete" << std::endl;
 
     // Move particles
     move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
-    std::cout << "Move parts complete" << std::endl;
+//    std::cout << "Move parts complete" << std::endl;
 
 }
