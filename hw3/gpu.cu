@@ -156,13 +156,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
 
     // print bin counts
-//    for (const int& it : bin_counts) {
-//        std::cout << "Count: " << it << std::endl;
-//    }
+    for (const int& it : bin_counts) {
+        std::cout << "Count: " << it << std::endl;
+    }
 
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
+//    thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
@@ -170,11 +170,11 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // compute the bin i for the part
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
-    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
+//    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
 
     // Compute forces
-    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
+//    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
 
     // Move particles
-    move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
+//    move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
 }
