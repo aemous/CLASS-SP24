@@ -168,7 +168,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts_cpy.begin());
+//    thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts_cpy.begin());
     std::cout << "Completed exclusive scan compute" << std::endl;
 
 //    int sum = 0;
