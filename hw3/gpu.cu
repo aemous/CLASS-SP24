@@ -159,13 +159,13 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, thrust::raw_pointer_cast(bin_counts.data()), num_parts, num_cells, size);
 
     // print bin counts
-    for (const int& it : bin_counts) {
-        std::cout << "Count: " << it << std::endl;
-    }
+//    for (const int& it : bin_counts) {
+//        std::cout << "Count: " << it << std::endl;
+//    }
 
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-//    thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
+    thrust::exclusive_scan(thrust::device, bin_counts.begin(), bin_counts.end(), bin_counts);
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
