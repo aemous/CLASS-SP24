@@ -153,6 +153,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
     thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
+    std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
+
     // task: compute particle count per bin
     // for each particle (per gpu core)
         // compute the bin for the particle
