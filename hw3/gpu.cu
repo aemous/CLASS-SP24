@@ -98,8 +98,7 @@ __global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, i
 //    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
     int* addr = last_part + cell_x + cell_y*num_cells;
 //    int* rawAddr = thrust::raw_pointer_cast(&addr[0]);
-    int* rawAddr = &addr[0];
-    int prev_last_part = atomicAdd(rawAddr, 1);
+    int prev_last_part = atomicAdd(addr, 1);
     // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
     parts_sorted[bin_counts[cell_x + cell_y*num_cells] + prev_last_part + 1] = tid;
 }
@@ -180,7 +179,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
     std::cout << "Final sum: " << sum << std::endl;
     // TODO do a serial prefix sum working , return to exclusive scan if time
-    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
+//    thrust::exclusive_scan(bin_counts.begin(), bin_counts.end(), bin_counts.begin());
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
