@@ -11,8 +11,12 @@
 // Put any static global variables here that you will use throughout the simulation.
 //thrust::host_vector<int> bin_counts;
 int* bin_counts;
+int* bin_counts_cpu;
 int* bin_end;
 int* sorted_particles;
+thrust::device_ptr<int> bin_counts_ptr;
+thrust::device_ptr<int> bin_end_ptr;
+thrust::device_ptr<int> sorted_parts_ptr;
 //thrust::host_vector<int> bin_end;
 //thrust::host_vector<int> sorted_particles;
 int blks;
@@ -147,17 +151,20 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
 //    sorted_particles = thrust::host_vector<int>(num_parts);
-    bin_counts = new int[num_cells * num_cells];
+    bin_counts_cpu = new int[num_cells * num_cells];
     cudaMalloc((void**)&bin_counts, num_cells * num_cells * sizeof(int));
+    bin_counts_ptr = thrust::device_pointer_cast(bin_counts);
 
     bin_end = new int[num_cells * num_cells];
     cudaMalloc((void**)&bin_end, num_cells * num_cells * sizeof(int));
+    bin_end_ptr = thrust::device_pointer_cast(bin_end);
 
     sorted_particles = new int[num_parts];
 
 //    cudaMemcpy(bin_counts_init, parts, num_parts * sizeof(particle_t), cudaMemcpyHostToDevice);
 
     cudaMalloc((void**)&sorted_particles, num_parts * sizeof(int));
+    sorted_parts_ptr = thrust::device_pointer_cast(sorted_particles);
 
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
