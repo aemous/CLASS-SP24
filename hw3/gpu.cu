@@ -192,17 +192,16 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     std::cout << "B " << std::endl;
 //    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
-    for (int i = 0; i < num_cells * num_cells; ++i) {
-        std::cout << "Count " << i << ": " << bin_counts[i] << std::endl;
-    }
+
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::host, bin_counts, bin_counts + (num_cells * num_cells), bin_counts);
+    thrust::exclusive_scan(thrust::host, bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts);
 //    for (int i = 0; i < num_cells * num_cells; ++i) {
 //        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
 //    }
 
+    std::cout << "C " << std::endl;
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
     // for each particle (per gpu core): then you compute
