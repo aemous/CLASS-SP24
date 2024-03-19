@@ -196,7 +196,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts_ptr);
+    thrust::exclusive_scan(thrust::device, bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts_ptr);
 //    for (int i = 0; i < num_cells * num_cells; ++i) {
 //        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
 //    }
