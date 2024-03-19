@@ -9,9 +9,12 @@
 #define NUM_THREADS 256
 
 // Put any static global variables here that you will use throughout the simulation.
-thrust::host_vector<int> bin_counts;
-thrust::host_vector<int> bin_end;
-thrust::host_vector<int> sorted_particles;
+//thrust::host_vector<int> bin_counts;
+int* bin_counts;
+int* bin_end;
+int* sorted_particles;
+//thrust::host_vector<int> bin_end;
+//thrust::host_vector<int> sorted_particles;
 int blks;
 int num_cells = 0;
 
@@ -140,16 +143,26 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     blks = (num_parts + NUM_THREADS - 1) / NUM_THREADS; // can we alter # of blocks ? ideally block map 1:1 with bins
     num_cells = floor(size / cutoff);
 
-    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
-    bin_end = thrust::host_vector<int>(num_cells * num_cells);
-    sorted_particles = thrust::host_vector<int>(num_parts);
+//    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
+//    bin_end = thrust::host_vector<int>(num_cells * num_cells);
+//    sorted_particles = thrust::host_vector<int>(num_parts);
+    cudaMalloc((void**)&bin_counts, num_cells * num_cells * sizeof(int));
+    cudaMalloc((void**)&bin_end, num_cells * num_cells * sizeof(int));
+    cudaMalloc((void**)&sorted_particles, num_parts * sizeof(int));
+
+//    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
+//    bin_end = thrust::host_vector<int>(num_cells * num_cells);
+//    sorted_particles = thrust::host_vector<int>(num_parts);
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // reset the vectors that support concurrent binning for computing via gpu
 //    thrust::host_vector<int> bin_counts_cpy = thrust::host_vector<int>(num_cells * num_cells);
-    thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
-    thrust::fill(bin_end.begin(), bin_end.end(), -1);
+//    thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
+//    thrust::fill(bin_end.begin(), bin_end.end(), -1);
+
+    thrust::fill(bin_counts, bin_counts + (num_cells * num_cells), (int) 0);
+    thrust::fill(bin_end, bin_end + (num_cells * num_cells), (int) -1);
 
 //    std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
 //    std::cout << "Num cells: " << num_cells << std::endl;
@@ -158,20 +171,20 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // for each particle (per gpu core)
         // compute the bin for the particle
         // increment the particle count for that bin using thrust::atomicAdd
-    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, &bin_counts.begin()[0], num_parts, num_cells, size);
+    compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
 
 //    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
-    for (const int& it : bin_counts) {
-        std::cout << "Count: " << it << std::endl;
+    for (int i = 0; i < num_cells * num_cells; ++i) {
+        std::cout << "Count " << i << ": " << bin_counts[i] << std::endl;
     }
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::host, bin_counts.begin(), bin_counts.end(), bin_counts.begin());
-    for (const int& it : bin_counts) {
-        std::cout << "Prefix sum: " << it << std::endl;
-    }
+    thrust::exclusive_scan(thrust::host, bin_counts, bin_counts + (num_cells * num_cells), bin_counts);
+//    for (const int& it : bin_counts) {
+//        std::cout << "Prefix sum: " << it << std::endl;
+//    }
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
@@ -179,13 +192,16 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // compute the bin i for the part
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
-    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
+//    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
 //    std::cout << "Compute parts sorted complete" << std::endl;
     // Compute forces
-    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), sorted_particles.data(), num_parts, num_cells, size);
+//    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), sorted_particles.data(), num_parts, num_cells, size);
+    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, sorted_particles, num_parts, num_cells, size);
 //    std::cout << "Compute forces complete" << std::endl;
 
     // Move particles
+//    move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
     move_gpu<<<blks, NUM_THREADS>>>(parts, num_parts, size);
 //    std::cout << "Move parts complete" << std::endl;
 
