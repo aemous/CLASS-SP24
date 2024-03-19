@@ -88,12 +88,6 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, i
     int cell_x = (int) ((num_cells-1) * (particles[tid].x / size));
     int cell_y = (int) ((num_cells-1) * (particles[tid].y / size));
 
-    if (cell_x > num_cells - 1) {
-        cell_x = 0;
-    }
-    if (cell_y > num_cells - 1) {
-        cell_y = 0;
-    }
     atomicAdd(&bin_counts[cell_x + cell_y*num_cells], 1);
 //    std::cout << "Added to bin count of " << cell_x << " " << cell_y << " . Result: " << bin_counts[cell_x + cell_y*num_cells]  << std::endl;
 }
@@ -195,6 +189,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // increment the particle count for that bin using thrust::atomicAdd
     compute_bin_counts_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts, num_parts, num_cells, size);
 
+    std::cout << "B " << std::endl;
 //    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
     for (int i = 0; i < num_cells * num_cells; ++i) {
