@@ -59,7 +59,7 @@ __global__ void compute_forces_gpu(particle_t* particles, int* bin_counts, int* 
     particles[tid].ax = particles[tid].ay = 0;
 
     // compute the bin for the cell
-    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
+    int cell_x = (int) ((num_cells-1) * (particles[tid].x / size));
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
 
     // for every neighbor cell
@@ -99,8 +99,8 @@ __global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, i
         return;
 
     // compute the bin i for the part
-    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
-    int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
+    int cell_x = (int) ((num_cells-1) * (particles[tid].x / size));
+    int cell_y = (int) ((num_cells-1) * (particles[tid].y / size));
 
     // atomically increment last_part[i] (i.e. reserve an index of parts_sorted)
 //    thrust::detail::normal_iterator<thrust::device_ptr<int>> addr = last_part.begin() + cell_x + cell_y*num_cells;
@@ -196,7 +196,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
-    thrust::exclusive_scan(thrust::host, bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts);
+    thrust::exclusive_scan(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts);
 //    for (int i = 0; i < num_cells * num_cells; ++i) {
 //        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
 //    }
