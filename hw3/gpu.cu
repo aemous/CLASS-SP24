@@ -84,6 +84,7 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, i
     int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
     int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
     atomicAdd(bin_counts + cell_x + cell_y*num_cells, 1);
+    std::cout << "Added to bin count of " << cell_x << " " << cell_y << " . Result: " << bin_counts[cell_x + cell_y*num_cells]  << std::endl;
 }
 
 __global__ void compute_parts_sorted(particle_t* particles, int* parts_sorted, int* last_part, int* bin_counts, int num_parts, int num_cells, int size) {
@@ -187,16 +188,16 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 
 //    std::cout << "Completed binning compute" << std::endl;
     // print bin counts
-    for (int i = 0; i < num_cells * num_cells; ++i) {
-        std::cout << "Count " << i << ": " << bin_counts[i] << std::endl;
-    }
+//    for (int i = 0; i < num_cells * num_cells; ++i) {
+//        std::cout << "Count " << i << ": " << bin_counts[i] << std::endl;
+//    }
 //    int* bin_counts_ptr = thrust::raw_pointer_cast(bin_counts.data());
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
     thrust::exclusive_scan(thrust::host, bin_counts, bin_counts + (num_cells * num_cells), bin_counts);
-    for (int i = 0; i < num_cells * num_cells; ++i) {
-        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
-    }
+//    for (int i = 0; i < num_cells * num_cells; ++i) {
+//        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
+//    }
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
