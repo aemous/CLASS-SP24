@@ -153,7 +153,7 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
     bin_end = new int[num_cells * num_cells];
     cudaMalloc((void**)&bin_end, num_cells * num_cells * sizeof(int));
 
-    int* sorted_particles = new int[num_parts];
+    sorted_particles = new int[num_parts];
 
 //    cudaMemcpy(bin_counts_init, parts, num_parts * sizeof(particle_t), cudaMemcpyHostToDevice);
 
@@ -173,8 +173,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     thrust::fill(bin_counts, bin_counts + (num_cells * num_cells), (int) 0);
     thrust::fill(bin_end, bin_end + (num_cells * num_cells), (int) -1);
 
-//    std::cout << "Bin counts size: " << bin_counts.size() << std::endl;
-//    std::cout << "Num cells: " << num_cells << std::endl;
+    std::cout << "A " << std::endl;
 
     // task: compute particle count per bin
     // for each particle (per gpu core)
