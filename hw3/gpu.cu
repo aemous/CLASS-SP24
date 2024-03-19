@@ -146,13 +146,26 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
 //    sorted_particles = thrust::host_vector<int>(num_parts);
-    cudaMalloc((void**)&bin_counts, num_cells * num_cells * sizeof(int));
-    cudaMalloc((void**)&bin_end, num_cells * num_cells * sizeof(int));
-    cudaMalloc((void**)&sorted_particles, num_parts * sizeof(int));
+    int* bin_counts_init = new int[num_cells * num_cells];
+    cudaMalloc((void**)&bin_counts_init, num_cells * num_cells * sizeof(int));
+
+    int* bin_end_init = new int[num_cells * num_cells];
+    cudaMalloc((void**)&bin_end_init, num_cells * num_cells * sizeof(int));
+
+    int* sorted_particles_init = new int[num_parts];
+
+//    cudaMemcpy(bin_counts_init, parts, num_parts * sizeof(particle_t), cudaMemcpyHostToDevice);
+
+    cudaMalloc((void**)&sorted_particles_init, num_parts * sizeof(int));
+
+    bin_counts = bin_counts_init;
+    bin_end = bin_end_init;
+    sorted_particles = sorted_particles_init;
 
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
 //    sorted_particles = thrust::host_vector<int>(num_parts);
+    std::cout << "Completed init" << std::endl;
 }
 
 void simulate_one_step(particle_t* parts, int num_parts, double size) {
