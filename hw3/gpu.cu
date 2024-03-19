@@ -210,7 +210,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
         // atomically increment last_part[i],
         // then, set parts_sorted[bin_counts[i] + last_part[i]] = part_id
 //    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles.data(), bin_end.data(), bin_counts.data(), num_parts, num_cells, size);
-    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_pawrts, num_cells, size);
+    compute_parts_sorted<<<blks, NUM_THREADS>>>(parts, sorted_particles, bin_end, bin_counts, num_parts, num_cells, size);
 //    std::cout << "Compute parts sorted complete" << std::endl;
     // Compute forces
 //    compute_forces_gpu<<<blks, NUM_THREADS>>>(parts, bin_counts.data(), sorted_particles.data(), num_parts, num_cells, size);
