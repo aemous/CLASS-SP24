@@ -11,7 +11,6 @@
 // Put any static global variables here that you will use throughout the simulation.
 //thrust::host_vector<int> bin_counts;
 int* bin_counts;
-int* bin_counts_cpu;
 int* bin_end;
 int* sorted_particles;
 thrust::device_ptr<int> bin_counts_ptr;
@@ -152,7 +151,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
 //    sorted_particles = thrust::host_vector<int>(num_parts);
-    bin_counts_cpu = new int[num_cells * num_cells];
     cudaMalloc((void**)&bin_counts, (num_cells * num_cells) * sizeof(int));
     bin_counts_ptr = thrust::device_pointer_cast(bin_counts);
 
@@ -197,7 +195,7 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
 //    thrust::exclusive_scan(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts_ptr);
-    thrust::inclusive_scan(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts_ptr);
+    thrust::exclusive_scan(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), bin_counts_ptr);
 //    for (int i = 0; i < num_cells * num_cells; ++i) {
 //        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
 //    }
