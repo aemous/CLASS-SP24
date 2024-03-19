@@ -59,7 +59,6 @@ __global__ void compute_forces_gpu(particle_t* particles, int* parts_idx, int* p
 }
 
 __global__ void move_gpu(particle_t* particles, int num_parts, double size) {
-
     // Get thread (particle) ID
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
@@ -98,7 +97,7 @@ __global__ void compute_bin_counts(particle_t* parts, int* b_counts, int num_par
     atomicAdd(&b_counts[cell_x + cell_y * num_cells], 1);
 }
 
-__global__ void compute_parts_sorted(particle_t* parts, int* parts_sorted, int * prefix_sum, int num_parts, double size, int num_cells){
+__global__ void compute_parts_sorted(particle_t* parts, int* parts_sorted, int* prefix_sum, int num_parts, double size, int num_cells){
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
     if (tid >= num_parts)
         return;
@@ -107,10 +106,10 @@ __global__ void compute_parts_sorted(particle_t* parts, int* parts_sorted, int *
     int bin_y = (int)((parts[tid].y / size) * (num_cells-1));
 
     int binidx = bin_x + bin_y * num_cells;
-    int partsidx = binidx == 0 ? 0 : prefix_sum[binidx - 1];
+    int parts_idx = binidx == 0 ? 0 : prefix_sum[binidx - 1];
 
-    while (atomicCAS(&parts_sorted[partsidx], -1, tid) != -1) {
-        partsidx ++;
+    while (atomicCAS(&parts_sorted[parts_idx], -1, tid) != -1) {
+        parts_idx++;
     }
 }
 
