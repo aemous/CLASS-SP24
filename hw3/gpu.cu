@@ -177,8 +177,8 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
 //    thrust::fill(bin_counts.begin(), bin_counts.end(), 0);
 //    thrust::fill(bin_end.begin(), bin_end.end(), -1);
 
-    thrust::fill(bin_counts, bin_counts + (num_cells * num_cells), (int) 0);
-    thrust::fill(bin_end, bin_end + (num_cells * num_cells), (int) -1);
+    thrust::fill(bin_counts_ptr, bin_counts_ptr + (num_cells * num_cells), (int) 0);
+    thrust::fill(bin_end_ptr, bin_end_ptr + (num_cells * num_cells), (int) -1);
 
     std::cout << "A " << std::endl;
 
