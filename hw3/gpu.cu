@@ -164,7 +164,6 @@ void init_simulation(particle_t* parts, int num_parts, double size) {
 
 //    bin_counts = thrust::host_vector<int>(num_cells * num_cells);
 //    bin_end = thrust::host_vector<int>(num_cells * num_cells);
-//    sorted_particles = thrust::host_vector<int>(num_parts);
     std::cout << "Completed init" << std::endl;
 }
 
@@ -195,9 +194,9 @@ void simulate_one_step(particle_t* parts, int num_parts, double size) {
     // task: prefix sum particle counts
     // use thrust::exclusive_scan on the particles/bin array. the last element should be num_parts
     thrust::exclusive_scan(thrust::host, bin_counts, bin_counts + (num_cells * num_cells), bin_counts);
-//    for (const int& it : bin_counts) {
-//        std::cout << "Prefix sum: " << it << std::endl;
-//    }
+    for (int i = 0; i < num_cells * num_cells; ++i) {
+        std::cout << "Count prefix " << i << ": " << bin_counts[i] << std::endl;
+    }
 
     // task: add the particle ids to a separate array parts_sorted
     // initialize an array, 1 entry for each cell, called last_part, initialized to -1
