@@ -81,8 +81,8 @@ __global__ void compute_bin_counts_gpu(particle_t* particles, int* bin_counts, i
     if (tid >= num_parts)
         return;
 
-    int cell_x = (int) ((num_cells-1) * particles[tid].x / size);
-    int cell_y = (int) ((num_cells-1) * particles[tid].y / size);
+    int cell_x = (int) ((num_cells-1) * (particles[tid].x / size));
+    int cell_y = (int) ((num_cells-1) * (particles[tid].y / size));
     atomicAdd(&bin_counts[cell_x + cell_y*num_cells], 1);
 //    std::cout << "Added to bin count of " << cell_x << " " << cell_y << " . Result: " << bin_counts[cell_x + cell_y*num_cells]  << std::endl;
 }
