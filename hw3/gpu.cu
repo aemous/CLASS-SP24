@@ -43,8 +43,8 @@ __global__ void compute_forces_gpu(particle_t* particles, int* parts_idx, int* p
 
     particles[tid].ax = particles[tid].ay = 0;
 
-    for (unsigned int y = bin_y - 1; y <= bin_y + 1; ++y) {
-        for (unsigned int x = bin_x - 1; x <= bin_x + 1; ++x) {
+    for (int y = bin_y - 1; y <= bin_y + 1; ++y) {
+        for (int x = bin_x - 1; x <= bin_x + 1; ++x) {
             if (x >= 0 && x < num_cells && y >= 0 && y < num_cells){
                 int bin_idx = x + y * num_cells;
                 int pidx_start = bin_idx == 0 ? 0 : prefix_sum[bin_idx - 1];
