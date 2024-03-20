@@ -49,7 +49,7 @@ __global__ void compute_forces_gpu(particle_t* particles, int* parts_idx, int* p
                 int bin_idx = x + y * num_cells;
                 int pidx_start = bin_idx == 0 ? 0 : prefix_sum[bin_idx - 1];
                 int pidx_end = prefix_sum[bin_idx];
-                for (unsigned int k = pidx_start; l < pidx_end; ++k) {
+                for (unsigned int k = pidx_start; k < pidx_end; ++k) {
                     int neighbor_idx = parts_idx[k];
                     apply_force_gpu(particles[tid], particles[neighbor_idx]);
                 }
