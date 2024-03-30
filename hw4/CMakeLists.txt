@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(hw3)
+project(hw4)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED YES)
