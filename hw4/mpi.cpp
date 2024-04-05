@@ -61,7 +61,7 @@ void init_simulation(particle_t* parts, int num_parts, double size, int rank, in
     // This function will be called once before the algorithm begins
     // Do not do any particle simulation here
     int target_bin_size = (int)(size/cutoff);
-    num_bins = ((target_bin_size / num_procs) * num_procs;
+    num_bins = ((target_bin_size / num_procs) * num_procs);
     local_bins = std::vector<std::vector<particle_t *>>(num_bins/num_procs);
     initial_bins = std::vector<std::vector<particle_t>>(num_procs);
     MPI_Status status;
@@ -221,7 +221,7 @@ void gather_for_save(particle_t* parts, int num_parts, double size, int rank, in
 
     int *rcounts, *displs;
     rcounts = (int*) malloc(num_procs*sizeof(int));
-    MPI_Gather(&num, 1, MPI_INT, rcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gather(&finer_bins.size(), 1, MPI_INT, rcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     displs = (int*) malloc(num_procs*sizeof(int));
     displs[0] = 0;
