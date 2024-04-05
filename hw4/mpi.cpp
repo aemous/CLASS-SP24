@@ -221,7 +221,8 @@ void gather_for_save(particle_t* parts, int num_parts, double size, int rank, in
 
     int *rcounts, *displs;
     rcounts = (int*) malloc(num_procs*sizeof(int));
-    MPI_Gather(&finer_bins.size(), 1, MPI_INT, rcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    int size_to_gather = finer_bins.size();
+    MPI_Gather(&size_to_gather, 1, MPI_INT, rcounts, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     displs = (int*) malloc(num_procs*sizeof(int));
     displs[0] = 0;
