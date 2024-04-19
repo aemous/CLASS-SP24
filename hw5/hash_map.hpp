@@ -27,7 +27,7 @@ struct HashMap {
     bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
 
     // Helper functions
-    int get_target(const pkmer_t& kmer);
+    uint64_t get_target(const pkmer_t& kmer);
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -47,9 +47,11 @@ HashMap::HashMap(size_t size) {
     g_data = upcxx::new_array<kmer_pair>(size);
     g_used = upcxx::new_array<uint64_t>(size);
 
+    kmer_pair *data_local = g_data.local();
+
     // initialize the g_used array with zeros
     for (unsigned int i = 0; i < size; ++i) {
-        g_used[i] = 0;
+        data_local[i] = 0;
     }
 
     // initialize the distributed objects
