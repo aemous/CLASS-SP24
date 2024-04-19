@@ -27,7 +27,7 @@ struct HashMap {
     bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
 
     // Helper functions
-    int get_target(const kmer_pair& kmer);
+    int get_target(const pkmer_t& kmer);
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -59,9 +59,11 @@ HashMap::HashMap(size_t size) {
 
 bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
-    int target_rank = get_target(kmer);
+    uint64_t target_rank = get_target(kmer.kmer);
 
     // fetch the global pointers from those target processes
+    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
+    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
 
     // linearly probe the slots, and atomically reserve the first empty one
 
@@ -82,7 +84,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 
 bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // get the target process
-    int target_rank = get_target(kmer);
+    uint64_t target_rank = get_target(key_kmer);
 
     // fetch
     uint64_t hash = key_kmer.hash();
@@ -100,7 +102,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     return success;
 }
 
-int HashMap::get_target(const kmer_pair& kmer) {
+uint64_t HashMap::get_target(const pkmer_t& kmer) {
     return kmer.hash() % upcxx::rank_me();
 }
 
