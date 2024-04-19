@@ -47,7 +47,7 @@ HashMap::HashMap(size_t size) {
     g_data = upcxx::new_array<kmer_pair>(size);
     g_used = upcxx::new_array<uint64_t>(size);
 
-    kmer_pair *used_local = g_used.local();
+    int *used_local = g_used.local();
 
     // initialize the g_used array with zeros
     for (unsigned int i = 0; i < size; ++i) {
