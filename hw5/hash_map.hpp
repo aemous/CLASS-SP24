@@ -1,5 +1,3 @@
-#pragma once
-
 #include "kmer_t.hpp"
 #include <upcxx/upcxx.hpp>
 
@@ -7,11 +5,21 @@ struct HashMap {
     std::vector<kmer_pair> data;
     std::vector<int> used;
 
+    upcxx::global_ptr<kmer_pair> g_data;
+    upcxx::global_ptr<uint64_t> g_used;
+
+    upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
+    upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
+
     size_t my_size;
 
     size_t size() const noexcept;
 
     HashMap(size_t size);
+    ~HashMap() {
+        upcxx::delete_array(g_data);
+        upcxx::delete_array(g_used);
+    }
 
     // Most important functions: insert and retrieve
     // k-mers from the hash table.
@@ -19,6 +27,7 @@ struct HashMap {
     bool find(const pkmer_t& key_kmer, kmer_pair& val_kmer);
 
     // Helper functions
+    int get_target(const kmer_pair& kmer);
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -33,9 +42,31 @@ HashMap::HashMap(size_t size) {
     my_size = size;
     data.resize(size);
     used.resize(size, 0);
+
+    // allocate the global pointers
+    g_data = upcxx::new_array<kmer_pair>(size);
+    g_used = upcxx::new_array<uint64_t>(size);
+
+    // initialize the g_used array with zeros
+    for (unsigned int i = 0; i < size; ++i) {
+        g_used[i] = 0;
+    }
+
+    // initialize the distributed objects
+    d_data = upcxx::dist_object<upcxx::global_ptr<kmer_pair>>();
+    d_used = upcxx::dist_object<upcxx::global_ptr<uint64_t>>();
 }
 
 bool HashMap::insert(const kmer_pair& kmer) {
+    // get the target process
+    int target_rank = get_target(kmer);
+
+    // fetch the global pointers from those target processes
+
+    // linearly probe the slots, and atomically reserve the first empty one
+
+    // write to the slot
+
     uint64_t hash = kmer.hash();
     uint64_t probe = 0;
     bool success = false;
@@ -50,6 +81,10 @@ bool HashMap::insert(const kmer_pair& kmer) {
 }
 
 bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
+    // get the target process
+    int target_rank = get_target(kmer);
+
+    // fetch
     uint64_t hash = key_kmer.hash();
     uint64_t probe = 0;
     bool success = false;
@@ -63,6 +98,10 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
         }
     } while (!success && probe < size());
     return success;
+}
+
+int HashMap::get_target(const kmer_pair& kmer) {
+    return kmer.hash() % upcxx::rank_me();
 }
 
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
