@@ -151,7 +151,8 @@ bool HashMap::request_bin_and_block(upcxx::dist_object<upcxx::global_ptr<uint64_
                       [](upcxx::global_ptr<uint64_t> &g_used, uint64_t bin, upcxx::atomic_domain<uint64_t> atomic_domain) {
                         int dst = 0;
                         atomic_domain.compare_exchange(g_used, g_used + bin, 0, &dst, std::memory_order_relaxed).wait();
-                        return dst != 0;
+                        bool success = dst != 0;
+                        return success;
                       }, g_used, bin, atomic_domain).wait();
 }
 
