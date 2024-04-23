@@ -14,6 +14,20 @@
 
 #include "butil.hpp"
 
+upcxx::future<> insert(const kmer_pair& kmer) {
+    return upcxx::rpc(get_target(kmer.kmer),
+                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair &val) {
+                          map->insert(kmer);
+                      }, d_hashmap, kmer.kmer, kmer);
+}
+
+upcxx::future<bool> find(const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
+    return upcxx::rpc(get_target(kmer.kmer),
+                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key) -> bool {
+                        return map->find(key, val_kmer);
+                      }, d_hashmap, key_kmer);
+}
+
 int main(int argc, char** argv) {
     upcxx::init();
 
@@ -100,7 +114,8 @@ int main(int argc, char** argv) {
         contig.push_back(start_kmer);
         while (contig.back().forwardExt() != 'F') {
             kmer_pair kmer;
-            bool success = hashmap.find(contig.back().next_kmer(), kmer);
+//            bool success = hashmap.find(contig.back().next_kmer(), kmer);
+            bool success = find(contig.back().next_kmer(), kmer);
             if (!success) {
                 throw std::runtime_error("Error: k-mer not found in hashmap.");
             }
@@ -148,9 +163,3 @@ uint64_t get_target(const pkmer_t& kmer) {
     return kmer.hash() % upcxx::rank_me();
 }
 
-upcxx::future<> insert(const kmer_pair& kmer) {
-    return upcxx::rpc(get_target(kmer.kmer),
-                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair &val) {
-        map->insert(kmer);
-    }, d_hashmap, kmer.kmer, kmer);
-}
