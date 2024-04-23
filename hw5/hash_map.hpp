@@ -37,7 +37,7 @@ struct HashMap {
 
     // Request a slot or check if it's already used.
 //    bool request_slot(uint64_t slot);
-    bool request_bin_and_block(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin, const kmer_pair& kmer);
+    bool request_bin_and_block(uint64_t bin, const kmer_pair& kmer);
     bool slot_used(uint64_t slot);
 };
 
@@ -146,7 +146,7 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 //    return dst != 0;
 //}
 
-bool HashMap::request_bin_and_block(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin, const kmer_pair& kmer) {
+bool HashMap::request_bin_and_block(uint64_t bin, const kmer_pair& kmer) {
     auto future = upcxx::rpc(get_target(kmer.kmer),
                              [](upcxx::global_ptr<uint64_t> &g_used, uint64_t bin, upcxx::atomic_domain<uint64_t> atomic_domain) {
                                  uint64_t* used_local = g_used.local();
