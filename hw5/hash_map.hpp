@@ -147,7 +147,7 @@ bool HashMap::request_slot(uint64_t slot) {
 }
 
 bool HashMap::request_bin_and_block(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin, const kmer_pair& kmer) {
-    return upcxx::rpc(get_target(kmer.kmer),
+    return (bool) upcxx::rpc(get_target(kmer.kmer),
                       [](upcxx::global_ptr<uint64_t> &g_used, uint64_t bin, upcxx::atomic_domain<uint64_t> atomic_domain) -> bool {
                         int dst = 0;
                         atomic_domain.compare_exchange(g_used, g_used + bin, 0, &dst, std::memory_order_relaxed).wait();
