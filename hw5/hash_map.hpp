@@ -141,8 +141,9 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 }
 
 bool HashMap::request_slot(uint64_t slot) {
-    atomic_domain.compare_exchange(g_used, g_used[slot], 0, std::memory_order_relaxed).wait();
-    return g_used[slot] != 0;
+    int dst = 0;
+    atomic_domain.compare_exchange(g_used, g_used[slot], 0, &dst, std::memory_order_relaxed).wait();
+    return dst != 0;
 }
 
 upcxx::future<bool> HashMap::request_bin(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin) {
