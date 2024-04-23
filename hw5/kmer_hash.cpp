@@ -69,9 +69,10 @@ int main(int argc, char** argv) {
     size_t n_kmers = line_count(kmer_fname);
 
     // Load factor of 0.5
+    // TODO for memory efficiency, consider dividing by number of processors
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
-//    HashMap hashmap(hash_table_size);
-    upcxx::dist_object<HashMap> d_hashmap = upcxx::dist_object<HashMap>(HashMap(hash_table_size));
+    HashMap hashmap(hash_table_size);
+//    upcxx::dist_object<HashMap> d_hashmap = upcxx::dist_object<HashMap>(HashMap(hash_table_size));
 //    upcxx::dist_object<upcxx::global_ptr<HashMap>> u_g(upcxx::new_array<double>(n_local));
 
     if (run_type == "verbose") {

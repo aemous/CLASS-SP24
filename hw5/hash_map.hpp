@@ -131,14 +131,13 @@ uint64_t HashMap::get_target(const pkmer_t& kmer) {
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
 
 void HashMap::write_slot(uint64_t slot, const kmer_pair& kmer) {
-//    data[slot] = kmer;
-    g_data[slot] = kmer;
-//    (g_data + slot).read()
+    kmer_pair *data_local = g_data.local();
+    data_local[slot] = kmer;
 }
 
 kmer_pair HashMap::read_slot(uint64_t slot) {
-//    return data[slot];
-    return (g_data + slot).read();
+    kmer_pair *data_local = g_data.local();
+    return data_local[slot];
 }
 
 bool HashMap::request_slot(uint64_t slot) {
