@@ -14,14 +14,14 @@
 
 #include "butil.hpp"
 
-upcxx::future<> insert(const kmer_pair& kmer) {
+upcxx::future<> insert(upcxx::dist_object<HashMap> d_hashmap, const kmer_pair& kmer) {
     return upcxx::rpc(get_target(kmer.kmer),
                       [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair &val) {
                           map->insert(kmer);
                       }, d_hashmap, kmer.kmer, kmer);
 }
 
-upcxx::future<bool> find(const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
+upcxx::future<bool> find(upcxx::dist_object<HashMap> d_hashmap, const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
     return upcxx::rpc(get_target(kmer.kmer),
                       [](upcxx::dist_object<HashMap> &map, const pkmer_t &key) -> bool {
                         return map->find(key, val_kmer);
@@ -91,7 +91,7 @@ int main(int argc, char** argv) {
 //            throw std::runtime_error("Error: HashMap is full!");
 //        }
 
-        insert(kmer).wait();
+        insert(d_hashmap, kmer).wait();
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
         while (contig.back().forwardExt() != 'F') {
             kmer_pair kmer;
 //            bool success = hashmap.find(contig.back().next_kmer(), kmer);
-            bool success = find(contig.back().next_kmer(), kmer).wait();
+            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
             if (!success) {
                 throw std::runtime_error("Error: k-mer not found in hashmap.");
             }
