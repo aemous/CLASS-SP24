@@ -125,7 +125,7 @@ int main(int argc, char** argv) {
 //            bool success = hashmap.find(contig.back().next_kmer(), kmer);
 //            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
             bool success = upcxx::rpc(get_target(kmer.kmer),
-                                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
+                                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, kmer_pair& val_kmer) -> bool {
                                           return map->find(key, val_kmer);
                                       }, d_hashmap, contig.back().next_kmer(), kmer).wait();
             if (!success) {
