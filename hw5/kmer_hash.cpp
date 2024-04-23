@@ -96,11 +96,11 @@ int main(int argc, char** argv) {
 //            throw std::runtime_error("Error: HashMap is full!");
 //        }
 
-//        insert(d_hashmap, kmer).wait();
-        upcxx::rpc(get_target(kmer.kmer),
-                   [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
-                       map->insert(val);
-                   }, d_hashmap, kmer).wait();
+        hashmap->insert(kmer).wait();
+//        upcxx::rpc(get_target(kmer.kmer),
+//                   [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
+//                       map->insert(val);
+//                   }, d_hashmap, kmer).wait();
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
