@@ -72,10 +72,12 @@ int main(int argc, char** argv) {
     std::vector<kmer_pair> start_nodes;
 
     for (auto& kmer : kmers) {
-        bool success = hashmap.insert(kmer);
-        if (!success) {
-            throw std::runtime_error("Error: HashMap is full!");
-        }
+//        bool success = hashmap.insert(kmer);
+//        if (!success) {
+//            throw std::runtime_error("Error: HashMap is full!");
+//        }
+
+        insert(kmer).wait();
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
@@ -140,4 +142,15 @@ int main(int argc, char** argv) {
 
     upcxx::finalize();
     return 0;
+}
+
+uint64_t get_target(const pkmer_t& kmer) {
+    return kmer.hash() % upcxx::rank_me();
+}
+
+upcxx::future<> insert(const kmer_pair& kmer) {
+    return upcxx::rpc(get_target(kmer.kmer),
+                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair &val) {
+        map->insert(kmer);
+    }, d_hashmap, kmer.kmer, kmer);
 }
