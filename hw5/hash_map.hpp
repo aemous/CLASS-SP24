@@ -61,8 +61,8 @@ HashMap::HashMap(size_t size) {
     }
 
     // initialize the distributed objects
-    d_data = upcxx::dist_object<upcxx::global_ptr<kmer_pair>>();
-    d_used = upcxx::dist_object<upcxx::global_ptr<uint64_t>>();
+    d_data = upcxx::dist_object<upcxx::global_ptr<kmer_pair>>(g_data);
+    d_used = upcxx::dist_object<upcxx::global_ptr<uint64_t>>(g_used);
 }
 
 bool HashMap::insert(const kmer_pair& kmer) {
