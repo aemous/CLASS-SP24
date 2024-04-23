@@ -84,7 +84,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
         uint64_t slot = (hash + probe++) % size();
 
         // TODO call request bin through an RPC on the distributed object d_used
-        success = request_bin_and_block(d_used, slot, kmer);
+        success = request_bin_and_block(slot, kmer);
         if (success) {
             // TODO call write through an RPC on the distributed d_data object
             write_slot(slot, kmer);
