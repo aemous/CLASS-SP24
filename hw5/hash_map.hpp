@@ -37,6 +37,7 @@ struct HashMap {
 
     // Request a slot or check if it's already used.
     bool request_slot(uint64_t slot);
+    upcxx::future<bool> request_bin(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin);
     bool slot_used(uint64_t slot);
 };
 
@@ -69,8 +70,8 @@ bool HashMap::insert(const kmer_pair& kmer) {
     uint64_t target_rank = get_target(kmer.kmer);
 
     // fetch the global pointers from those target processes
-    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
-    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
+//    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
+//    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
 
     // linearly probe the slots, and atomically reserve the first empty one
 
@@ -81,8 +82,11 @@ bool HashMap::insert(const kmer_pair& kmer) {
     bool success = false;
     do {
         uint64_t slot = (hash + probe++) % size();
+
+        // TODO call request bin through an RPC on the distributed object d_used
         success = request_slot(slot);
         if (success) {
+            // TODO call write through an RPC on the distributed d_data object
             write_slot(slot, kmer);
         }
     } while (!success && probe < size());
@@ -94,11 +98,13 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // get the target process
     uint64_t target_rank = get_target(key_kmer);
 
+    // TODO delete the next instruction
+
     // fetch the global pointers from those target processes
     upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
     upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
 
-    // linearly probe the slots, and atomically reserve the first empty one
+    // linearly probe the bin, and atomically reserve the first empty one
 
     // set the value kmer at each iteration
 
@@ -108,6 +114,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     do {
         uint64_t slot = (hash + probe++) % size();
         if (slot_used(slot)) {
+            // TODO read from the bin using RPC on the distributed object
             val_kmer = read_slot(slot);
             if (val_kmer.kmer == key_kmer) {
                 success = true;
@@ -136,7 +143,16 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 
 bool HashMap::request_slot(uint64_t slot) {
     atomic_domain.compare_exchange(g_used, g_used[slot], 0, std::memory_order_relaxed).wait();
-    return g_used[slot];
+    return g_used[slot] != 0;
+}
+
+upcxx::future<bool> HashMap::request_bin(upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used, uint64_t bin) {
+    return upcxx::rpc(get_target(kmer.kmer),
+                      [](upcxx::dist_object<upcxx::global_ptr<uint64_t>> &bins, uint64_t bin, upcxx::atomic_domain<uint64_t> atomic_domain) -> bool {
+                        int dst = 0;
+                        atomic_domain.compare_exchange(g_used, g_used[slot], 0, &dst, std::memory_order_relaxed).wait();
+                        return dst != 0;
+                      }, d_used, bin, atomic_domain);
 }
 
 size_t HashMap::size() const noexcept { return my_size; }
