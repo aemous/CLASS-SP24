@@ -27,7 +27,7 @@ upcxx::future<> insert(upcxx::dist_object<HashMap> d_hashmap, const kmer_pair& k
 
 upcxx::future<bool> find(upcxx::dist_object<HashMap> d_hashmap, const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
     return upcxx::rpc(get_target(kmer.kmer),
-                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key) -> bool {
+                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
                         return map->find(key, val_kmer);
                       }, d_hashmap, key_kmer);
 }
