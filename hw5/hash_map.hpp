@@ -125,7 +125,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
 }
 
 uint64_t HashMap::get_target(const pkmer_t& kmer) {
-    return kmer.hash() % upcxx::rank_me();
+    return kmer.hash() % upcxx::rank_n();
 }
 
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
@@ -142,7 +142,7 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 
 bool HashMap::request_slot(uint64_t slot) {
     int dst = 0;
-    atomic_domain.compare_exchange(g_used, g_used[slot], 0, &dst, std::memory_order_relaxed).wait();
+    atomic_domain.compare_exchange(g_used, g_used + slot, 0, &dst, std::memory_order_relaxed).wait();
     return dst != 0;
 }
 
