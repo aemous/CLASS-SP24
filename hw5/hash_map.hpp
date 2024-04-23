@@ -11,6 +11,8 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
+    upcxx::atomic_domain<uint64_t> atomic_domain;
+
     size_t my_size;
 
     size_t size() const noexcept;
@@ -42,6 +44,9 @@ HashMap::HashMap(size_t size) {
     my_size = size;
     data.resize(size);
     used.resize(size, 0);
+
+    // initialize the atomic domain we'll use for reserving slots
+    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
     g_data = upcxx::new_array<kmer_pair>(size);
@@ -84,11 +89,19 @@ bool HashMap::insert(const kmer_pair& kmer) {
     return success;
 }
 
+// TODO after getting correctness done, one might consider early-stopping at the first unused slot as an optimization
 bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // get the target process
     uint64_t target_rank = get_target(key_kmer);
 
-    // fetch
+    // fetch the global pointers from those target processes
+    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
+    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
+
+    // linearly probe the slots, and atomically reserve the first empty one
+
+    // set the value kmer at each iteration
+
     uint64_t hash = key_kmer.hash();
     uint64_t probe = 0;
     bool success = false;
@@ -110,17 +123,19 @@ uint64_t HashMap::get_target(const pkmer_t& kmer) {
 
 bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
 
-void HashMap::write_slot(uint64_t slot, const kmer_pair& kmer) { data[slot] = kmer; }
+void HashMap::write_slot(uint64_t slot, const kmer_pair& kmer) {
+//    data[slot] = kmer;
+    g_data[slot] = kmer;
+}
 
-kmer_pair HashMap::read_slot(uint64_t slot) { return data[slot]; }
+kmer_pair HashMap::read_slot(uint64_t slot) {
+//    return data[slot];
+    return g_data[slot];
+}
 
 bool HashMap::request_slot(uint64_t slot) {
-    if (used[slot] != 0) {
-        return false;
-    } else {
-        used[slot] = 1;
-        return true;
-    }
+    atomic_domain.compare_exchange(g_used, g_used[slot], 0, std::memory_order_relaxed).wait();
+    return g_used[slot];
 }
 
 size_t HashMap::size() const noexcept { return my_size; }
