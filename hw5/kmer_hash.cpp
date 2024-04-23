@@ -18,19 +18,19 @@ uint64_t get_target(const pkmer_t& kmer) {
     return kmer.hash() % upcxx::rank_me();
 }
 
-upcxx::future<> insert(upcxx::dist_object<HashMap> d_hashmap, const kmer_pair& kmer) {
-    return upcxx::rpc(get_target(kmer.kmer),
-                      [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
-                          map->insert(val);
-                      }, d_hashmap, kmer);
-}
-
-upcxx::future<bool> find(upcxx::dist_object<HashMap> d_hashmap, const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
-    return upcxx::rpc(get_target(kmer.kmer),
-                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
-                        return map->find(key, val_kmer);
-                      }, d_hashmap, key_kmer);
-}
+//upcxx::future<> insert(upcxx::dist_object<HashMap> d_hashmap, const kmer_pair& kmer) {
+//    return upcxx::rpc(get_target(kmer.kmer),
+//                      [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
+//                          map->insert(val);
+//                      }, d_hashmap, kmer);
+//}
+//
+//upcxx::future<bool> find(upcxx::dist_object<HashMap> d_hashmap, const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
+//    return upcxx::rpc(get_target(kmer.kmer),
+//                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
+//                        return map->find(key, val_kmer);
+//                      }, d_hashmap, key_kmer);
+//}
 
 int main(int argc, char** argv) {
     upcxx::init();
