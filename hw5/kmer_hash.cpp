@@ -95,7 +95,11 @@ int main(int argc, char** argv) {
 //            throw std::runtime_error("Error: HashMap is full!");
 //        }
 
-        insert(d_hashmap, kmer).wait();
+//        insert(d_hashmap, kmer).wait();
+        upcxx::rpc(get_target(kmer.kmer),
+                   [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
+                       map->insert(val);
+                   }, d_hashmap, kmer).wait();
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
@@ -119,7 +123,11 @@ int main(int argc, char** argv) {
         while (contig.back().forwardExt() != 'F') {
             kmer_pair kmer;
 //            bool success = hashmap.find(contig.back().next_kmer(), kmer);
-            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
+//            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
+            bool success = upcxx::rpc(get_target(kmer.kmer),
+                                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
+                                          return map->find(key, val_kmer);
+                                      }, d_hashmap, contig.back().next_kmer(), kmer).wait();
             if (!success) {
                 throw std::runtime_error("Error: k-mer not found in hashmap.");
             }
