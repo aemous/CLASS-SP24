@@ -147,7 +147,7 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 //}
 
 bool HashMap::request_bin_and_block(uint64_t bin, const kmer_pair& kmer) {
-    upcxxx:future<bool> future = upcxx::rpc(get_target(kmer.kmer),
+    upcxx:future<bool> future = upcxx::rpc(get_target(kmer.kmer),
                              [](upcxx::global_ptr<uint64_t> &g_used, uint64_t bin, upcxx::atomic_domain<uint64_t> atomic_domain) {
                                  uint64_t* used_local = g_used.local();
                                  atomic_domain.compare_exchange(g_used, used_local[bin], (uint64_t) 0, std::memory_order_relaxed).wait();
