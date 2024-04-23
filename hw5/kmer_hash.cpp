@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 //            throw std::runtime_error("Error: HashMap is full!");
 //        }
 
-        hashmap.insert(kmer).wait();
+        hashmap.insert(kmer);
 //        upcxx::rpc(get_target(kmer.kmer),
 //                   [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
 //                       map->insert(val);
