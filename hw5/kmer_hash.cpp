@@ -124,13 +124,13 @@ int main(int argc, char** argv) {
             kmer_pair kmer;
 //            bool success = hashmap.find(contig.back().next_kmer(), kmer);
 //            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
-            bool success = upcxx::rpc(get_target(kmer.kmer),
+            /*bool success =*/ upcxx::rpc(get_target(kmer.kmer),
                                       [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, kmer_pair& val_kmer) -> bool {
                                           return map->find(key, val_kmer);
                                       }, d_hashmap, contig.back().next_kmer(), kmer).wait();
-            if (!success) {
-                throw std::runtime_error("Error: k-mer not found in hashmap.");
-            }
+//            if (!success) {
+//                throw std::runtime_error("Error: k-mer not found in hashmap.");
+//            }
             contig.push_back(kmer);
         }
         contigs.push_back(contig);
