@@ -77,20 +77,33 @@ bool HashMap::insert(const kmer_pair& kmer) {
 
     // write to the slot
 
-    uint64_t hash = kmer.hash();
-    uint64_t probe = 0;
-    bool success = false;
-    do {
-        uint64_t slot = (hash + probe++) % size();
+    // this rpc should do everything
+    // TODO i have suspicions that this capture clause might not do what i want
+    // will the instance fields referenced below reference the fields on the remote process or the caller ?
+    // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
+    upcxx::future<bool> future = upcxx::rpc(target_rank,
+                                            [this](const kmer_pair& kmer) -> bool {
+                                                uint64_t hash = kmer.hash();
+                                                uint64_t probe = 0;
+                                                bool success = false;
 
-        // TODO call request bin through an RPC on the distributed object d_used
-        success = request_bin_and_block(slot, kmer);
-        if (success) {
-            // TODO call write through an RPC on the distributed d_data object
-            write_slot(slot, kmer);
-        }
-    } while (!success && probe < size());
-    return success;
+                                                do {
+                                                    uint64_t bin = (hash + probe++) % size();
+
+                                                    // attempt to request the bin
+                                                    uint64_t* used_local = g_used.local();
+                                                    atomic_domain.compare_exchange(g_used, used_local[bin], (uint64_t) 0, std::memory_order_relaxed).wait();
+                                                    success = used_local[bin] != 0;
+                                                    if (success) {
+                                                        // write to the bin
+                                                        kmer_pair *data_local = g_data.local();
+                                                        data_local[bin] = kmer;
+                                                    }
+                                                } while (!success && probe < size());
+
+                                                return success;
+                                            }, kmer);
+    return future.wait();
 }
 
 // TODO after getting correctness done, one might consider early-stopping at the first unused slot as an optimization
@@ -98,7 +111,30 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // get the target process
     uint64_t target_rank = get_target(key_kmer);
 
-    // TODO delete the next instruction
+    upcxx::future<kmer_pair> future = upcxx::rpc(target_rank,
+                                            [this](const pkmer_t key_kmer) -> bool {
+                                                uint64_t hash = key_kmer.hash();
+                                                uint64_t probe = 0;
+                                                bool success = false;
+                                                kmer_pair output = kmer_pair()
+
+                                                do {
+                                                    uint64_t bin = (hash + probe++) % size();
+
+                                                    uint64_t* used_local = g_used.local();
+                                                    kmer_pair* data_local = g_data.local();
+
+                                                    if (used_local[bin] != 0) {
+                                                        output = data_local[bin];
+                                                        if (output.kmer == key_kmer) {
+                                                            success = true;
+                                                        }
+                                                    }
+                                                } while (!success && probe < size());
+                                                return success;
+                                            }, key_kmer);
+
+    // TODO finish this
 
     // fetch the global pointers from those target processes
     upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
@@ -108,19 +144,6 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
 
     // set the value kmer at each iteration
 
-    uint64_t hash = key_kmer.hash();
-    uint64_t probe = 0;
-    bool success = false;
-    do {
-        uint64_t slot = (hash + probe++) % size();
-        if (slot_used(slot)) {
-            // TODO read from the bin using RPC on the distributed object
-            val_kmer = read_slot(slot);
-            if (val_kmer.kmer == key_kmer) {
-                success = true;
-            }
-        }
-    } while (!success && probe < size());
     return success;
 }
 
