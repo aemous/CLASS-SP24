@@ -69,14 +69,6 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
     uint64_t target_rank = get_target(kmer.kmer);
 
-    // fetch the global pointers from those target processes
-//    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
-//    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
-
-    // linearly probe the slots, and atomically reserve the first empty one
-
-    // write to the slot
-
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
     // will the instance fields referenced below reference the fields on the remote process or the caller ?
@@ -112,7 +104,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     uint64_t target_rank = get_target(key_kmer);
 
     upcxx::future<kmer_pair> future = upcxx::rpc(target_rank,
-                                            [this](const pkmer_t key_kmer) -> bool {
+                                            [this](const pkmer_t key_kmer) -> kmer_pair {
                                                 uint64_t hash = key_kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
@@ -131,18 +123,21 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                         }
                                                     }
                                                 } while (!success && probe < size());
-                                                return success;
+                                                // if success is false, return the 'error kmer'
+
+                                                if (!success) {
+                                                    output.fb_ext[0] = 'N';
+                                                    output.fb_ext[1] = 'N';
+                                                }
+
+                                                return output;
                                             }, key_kmer);
+    // set val_kmer to the output of the rpc future, check if we received the 'error kmer', and return false only if we did
+    val_kmer = future.wait();
 
-    // TODO finish this
-
-    // fetch the global pointers from those target processes
-    upcxx::global_ptr<kmer_pair> target_data = d_data.fetch(target_rank).wait();
-    upcxx::global_ptr<uint64_t> target_used = d_used.fetch(target_rank).wait();
-
-    // linearly probe the bin, and atomically reserve the first empty one
-
-    // set the value kmer at each iteration
+    if (val_kmer->fb_ext[0] == 'N' && val_kmer->fb_ext[1] == 'N') {
+        return false;
+    }
 
     return success;
 }
