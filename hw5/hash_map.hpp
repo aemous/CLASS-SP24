@@ -108,7 +108,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                 uint64_t hash = key_kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
-                                                kmer_pair output = kmer_pair()
+                                                kmer_pair output = kmer_pair();
 
                                                 do {
                                                     uint64_t bin = (hash + probe++) % size();
@@ -135,11 +135,11 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // set val_kmer to the output of the rpc future, check if we received the 'error kmer', and return false only if we did
     val_kmer = future.wait();
 
-    if (val_kmer->fb_ext[0] == 'N' && val_kmer->fb_ext[1] == 'N') {
+    if (val_kmer.fb_ext[0] == 'N' && val_kmer.fb_ext[1] == 'N') {
         return false;
     }
 
-    return success;
+    return true;
 }
 
 uint64_t HashMap::get_target(const pkmer_t& kmer) {
