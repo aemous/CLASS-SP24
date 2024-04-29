@@ -18,20 +18,6 @@ uint64_t get_target(const pkmer_t& kmer) {
     return kmer.hash() % upcxx::rank_me();
 }
 
-//upcxx::future<> insert(upcxx::dist_object<HashMap> d_hashmap, const kmer_pair& kmer) {
-//    return upcxx::rpc(get_target(kmer.kmer),
-//                      [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
-//                          map->insert(val);
-//                      }, d_hashmap, kmer);
-//}
-//
-//upcxx::future<bool> find(upcxx::dist_object<HashMap> d_hashmap, const pkmer_t& key_kmer, const kmer_pair& val_kmer) {
-//    return upcxx::rpc(get_target(kmer.kmer),
-//                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, const kmer_pair& val_kmer) -> bool {
-//                        return map->find(key, val_kmer);
-//                      }, d_hashmap, key_kmer);
-//}
-
 int main(int argc, char** argv) {
     upcxx::init();
 
@@ -72,8 +58,6 @@ int main(int argc, char** argv) {
     // TODO for memory efficiency, consider dividing by number of processors
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
     HashMap hashmap(hash_table_size);
-//    upcxx::dist_object<HashMap> d_hashmap = upcxx::dist_object<HashMap>(HashMap(hash_table_size));
-//    upcxx::dist_object<upcxx::global_ptr<HashMap>> u_g(upcxx::new_array<double>(n_local));
 
     if (run_type == "verbose") {
         BUtil::print("Initializing hash table of size %d for %d kmers.\n", hash_table_size,
@@ -91,16 +75,10 @@ int main(int argc, char** argv) {
     std::vector<kmer_pair> start_nodes;
 
     for (auto& kmer : kmers) {
-//        bool success = hashmap.insert(kmer);
-//        if (!success) {
-//            throw std::runtime_error("Error: HashMap is full!");
-//        }
-
-        hashmap.insert(kmer);
-//        upcxx::rpc(get_target(kmer.kmer),
-//                   [](upcxx::dist_object<HashMap> &map, const kmer_pair &val) {
-//                       map->insert(val);
-//                   }, d_hashmap, kmer).wait();
+        bool success = hashmap.insert(kmer);
+        if (!success) {
+            throw std::runtime_error("Error: HashMap is full!");
+        }
 
         if (kmer.backwardExt() == 'F') {
             start_nodes.push_back(kmer);
@@ -108,6 +86,7 @@ int main(int argc, char** argv) {
     }
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
+    std::cout << "Insertions complete" << std::endl;
 
     double insert_time = std::chrono::duration<double>(end_insert - start).count();
     if (run_type != "test") {
@@ -123,15 +102,11 @@ int main(int argc, char** argv) {
         contig.push_back(start_kmer);
         while (contig.back().forwardExt() != 'F') {
             kmer_pair kmer;
-//            bool success = hashmap.find(contig.back().next_kmer(), kmer);
-//            bool success = find(d_hashmap, contig.back().next_kmer(), kmer).wait();
-//            /*bool success =*/ upcxx::rpc(get_target(kmer.kmer),
-//                                      [](upcxx::dist_object<HashMap> &map, const pkmer_t &key, kmer_pair& val_kmer) -> bool {
-//                                          return map->find(key, val_kmer);
-//                                      }, d_hashmap, contig.back().next_kmer(), kmer).wait();
-//            if (!success) {
-//                throw std::runtime_error("Error: k-mer not found in hashmap.");
-//            }
+            bool success = hashmap.find(contig.back().next_kmer(), kmer);
+
+            if (!success) {
+                throw std::runtime_error("Error: k-mer not found in hashmap.");
+            }
             contig.push_back(kmer);
         }
         contigs.push_back(contig);
@@ -139,6 +114,7 @@ int main(int argc, char** argv) {
 
     auto end_read = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
+    std::cout << "Finished finding" << std::endl;
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> read = end_read - start_read;
