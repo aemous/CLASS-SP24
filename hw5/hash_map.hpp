@@ -38,7 +38,6 @@ struct HashMap {
 
     // Request a slot or check if it's already used.
 //    bool request_slot(uint64_t slot);
-    bool slot_used(uint64_t slot);
 };
 
 HashMap::HashMap(size_t size) {
@@ -145,8 +144,6 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
 uint64_t HashMap::get_target(const pkmer_t& kmer) {
     return kmer.hash() % upcxx::rank_n();
 }
-
-bool HashMap::slot_used(uint64_t slot) { return used[slot] != 0; }
 
 void HashMap::write_slot(uint64_t slot, const kmer_pair& kmer) {
     kmer_pair *data_local = g_data.local();
