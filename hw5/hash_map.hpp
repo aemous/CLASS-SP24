@@ -81,10 +81,15 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 do {
                                                     uint64_t bin = (hash + probe++) % size();
 
+                                                    std::cout << "Bin " << unsigned(bin) << std::endl;
+
                                                     // attempt to request the bin
                                                     uint64_t* used_local = g_used.local();
-                                                    atomic_domain.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
-                                                    success = used_local[bin] != 0;
+                                                    uint64_t result = atomic_domain.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    // TODO this wont work right ? if used_local[bin] = 1 already, this overwrites the value at bin
+//                                                    success = used_local[bin] != 0;
+                                                    std::cout << "Success = " << unsigned(result) << std::endl;
+                                                    success = result == 0;
                                                     if (success) {
                                                         // write to the bin
                                                         kmer_pair *data_local = g_data.local();
