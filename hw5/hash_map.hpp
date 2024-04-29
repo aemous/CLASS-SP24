@@ -2,8 +2,8 @@
 #include <upcxx/upcxx.hpp>
 
 struct HashMap {
-    std::vector<kmer_pair> data;
-    std::vector<int> used;
+//    std::vector<kmer_pair> data;
+//    std::vector<int> used;
 
     upcxx::global_ptr<kmer_pair> g_data;
     upcxx::global_ptr<uint64_t> g_used;
@@ -43,8 +43,8 @@ struct HashMap {
 
 HashMap::HashMap(size_t size) {
     my_size = size;
-    data.resize(size);
-    used.resize(size, 0);
+//    data.resize(size);
+//    used.resize(size, 0);
 
     // initialize the atomic domain we'll use for reserving slots
     atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
