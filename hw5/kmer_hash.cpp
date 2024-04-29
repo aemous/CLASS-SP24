@@ -23,6 +23,7 @@ int main(int argc, char** argv) {
 
     if (upcxx::rank_n() > 1) {
 	// TODO
+    BUtil::print("UPc rank exceeds 1, and initiated")
     }
 
     if (argc < 2) {
