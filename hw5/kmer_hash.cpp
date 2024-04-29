@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
 
     if (upcxx::rank_n() > 1) {
 	// TODO
-    BUtil::print("UPc rank exceeds 1, and initiated");
+        BUtil::print("UPc rank exceeds 1, and initiated\n");
     }
 
     if (argc < 2) {
@@ -78,6 +78,9 @@ int main(int argc, char** argv) {
 
     for (auto& kmer : kmers) {
         bool success = hashmap.insert(kmer);
+        if (success) {
+            BUtil::print("Successful insert\n");
+        }
         if (!success) {
             throw std::runtime_error("Error: HashMap is full!");
         }
@@ -149,4 +152,3 @@ int main(int argc, char** argv) {
     upcxx::finalize();
     return 0;
 }
-

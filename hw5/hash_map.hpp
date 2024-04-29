@@ -19,6 +19,7 @@ struct HashMap {
 
     HashMap(size_t size);
     ~HashMap() {
+        atomic_domain.destroy();
         upcxx::delete_array(g_data);
         upcxx::delete_array(g_used);
     }
@@ -37,7 +38,6 @@ struct HashMap {
 
     // Request a slot or check if it's already used.
 //    bool request_slot(uint64_t slot);
-    bool request_bin_and_block(uint64_t bin, const kmer_pair& kmer);
     bool slot_used(uint64_t slot);
 };
 
@@ -84,7 +84,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 
                                                     // attempt to request the bin
                                                     uint64_t* used_local = g_used.local();
-                                                    atomic_domain.compare_exchange(g_used, used_local[bin], (uint64_t) 0, std::memory_order_relaxed).wait();
+                                                    atomic_domain.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
                                                     success = used_local[bin] != 0;
                                                     if (success) {
                                                         // write to the bin
@@ -163,17 +163,5 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
 //    atomic_domain.compare_exchange(g_used, g_used + slot, 0, &dst, std::memory_order_relaxed).wait();
 //    return dst != 0;
 //}
-
-bool HashMap::request_bin_and_block(uint64_t bin, const kmer_pair& kmer) {
-    upcxx::future<bool> future = upcxx::rpc(get_target(kmer.kmer),
-                             [this](/*upcxx::global_ptr<uint64_t> &g_used, */uint64_t bin/*, upcxx::atomic_domain<uint64_t> atomic_domain*/) -> bool {
-                                 uint64_t* used_local = g_used.local();
-                                 atomic_domain.compare_exchange(g_used, used_local[bin], (uint64_t) 0, std::memory_order_relaxed).wait();
-                                 bool success = used_local[bin] != 0;
-                                 return success;
-                             }, bin);
-    bool success = future.wait();
-    return success;
-}
 
 size_t HashMap::size() const noexcept { return my_size; }
