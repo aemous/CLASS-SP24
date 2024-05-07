@@ -89,8 +89,8 @@ bool HashMap::insert(const kmer_pair& kmer) {
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
                                             [](
-                                                    upcxx::dist_object<upcxx::global_ptr<kmer_pair>> local_data,
-                                                    upcxx::dist_object<upcxx::global_ptr<uint64_t>> local_used,
+                                                    upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
+                                                    upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer/*,
                                                     const size_t size*/) -> bool {
                                                 const size_t = 2000000;
