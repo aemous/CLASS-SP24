@@ -77,7 +77,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 //    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
-    static HashMap::ad;
+    static upcxx::atomic_domain<uint64_t>& ad_local = &HashMap::ad;
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
@@ -109,7 +109,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //                                                    std::cout << "Call to local succes" << std::endl;
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
-                                                    uint64_t result = ad.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    uint64_t result = ad_local.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
 //                                                    std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
 //                                                    std::cout << "Success = " << unsigned(result) << std::endl;
