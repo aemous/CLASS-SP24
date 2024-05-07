@@ -14,16 +14,11 @@
 
 #include "butil.hpp"
 
-uint64_t get_target(const pkmer_t& kmer) {
-    return kmer.hash() % upcxx::rank_me();
-}
-
 int main(int argc, char** argv) {
     upcxx::init();
 
     if (upcxx::rank_n() > 1) {
-	// TODO
-        BUtil::print("UPc rank exceeds 1, and initiated\n");
+
     }
 
     if (argc < 2) {
@@ -56,7 +51,6 @@ int main(int argc, char** argv) {
     size_t n_kmers = line_count(kmer_fname);
 
     // Load factor of 0.5
-    // TODO for memory efficiency, consider dividing by number of processors
     size_t hash_table_size = n_kmers * (1.0 / 0.5);
     HashMap hashmap(hash_table_size);
 
@@ -67,10 +61,9 @@ int main(int argc, char** argv) {
 
     std::vector<kmer_pair> kmers = read_kmers(kmer_fname, upcxx::rank_n(), upcxx::rank_me());
 
-    // TODO uncomment if
-//    if (run_type == "verbose") {
+    if (run_type == "verbose") {
         BUtil::print("Finished reading kmers.\n");
-//    }
+    }
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -91,7 +84,6 @@ int main(int argc, char** argv) {
     }
     auto end_insert = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
-    std::cout << "Insertions complete" << std::endl;
 
     double insert_time = std::chrono::duration<double>(end_insert - start).count();
     if (run_type != "test") {
@@ -102,7 +94,6 @@ int main(int argc, char** argv) {
     auto start_read = std::chrono::high_resolution_clock::now();
 
     std::list<std::list<kmer_pair>> contigs;
-    std::cout << "Begin finds" << std::endl;
     for (const auto& start_kmer : start_nodes) {
         std::list<kmer_pair> contig;
         contig.push_back(start_kmer);

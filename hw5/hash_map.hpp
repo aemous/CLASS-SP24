@@ -5,9 +5,6 @@ static bool atomic_domain_initialized;
 static upcxx::atomic_domain<uint64_t> ad;
 
 struct HashMap {
-//    std::vector<kmer_pair> data;
-//    std::vector<int> used;
-
     upcxx::global_ptr<kmer_pair> g_data;
     upcxx::global_ptr<uint64_t> g_used;
 
@@ -33,26 +30,15 @@ struct HashMap {
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
 
-//    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
-//        return HashMap::ad;
-//    }
-
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
     kmer_pair read_slot(uint64_t slot);
-
-    // Request a slot or check if it's already used.
-//    bool request_slot(uint64_t slot);
 };
 
 HashMap::HashMap(size_t size) {
-//    init_atomic_domain();
     my_size = size;
-//    data.resize(size);
-//    used.resize(size, 0);
 
     // initialize the atomic domain we'll use for reserving slots
-//    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
     ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
@@ -73,45 +59,25 @@ HashMap::HashMap(size_t size) {
 
 bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
-//    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-//    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
-//    static upcxx::atomic_domain<uint64_t>& ad_local = &HashMap::ad;
 
-    // this rpc should do everything
-    // TODO i have suspicions that this capture clause might not do what i want
-    // will the instance fields referenced below reference the fields on the remote process or the caller ?
-    // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
-//    std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
                                             [](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
                                                     const size_t& size) -> bool {
-//                                                std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
 
-
-//                                                std::cout << "About to enter do-while" << std::endl;
-
                                                 do {
-//                                                    std::cout << "Begin do-while, size: " << size << std::endl;
                                                     uint64_t bin = (hash + probe++) % size;
-
-//                                                    std::cout << "Bin " << unsigned(bin) << std::endl;
 
                                                     // attempt to request the bin
                                                     uint64_t* used_local = local_used->local();
-//                                                    std::cout << "Call to local succes" << std::endl;
-//                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
-//                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
+
                                                     uint64_t result = ad.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
-//                                                    std::cout << "Call to compare exchange succ" << std::endl;
-//                                                    success = used_local[bin] != 0;
-//                                                    std::cout << "Success = " << unsigned(result) << std::endl;
                                                     success = result == 0;
                                                     if (success) {
                                                         // write to the bin
@@ -125,7 +91,6 @@ bool HashMap::insert(const kmer_pair& kmer) {
     return future.wait();
 }
 
-// TODO after getting correctness done, one might consider early-stopping at the first unused slot as an optimization
 bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     // get the target process
     uint64_t target_rank = get_target(key_kmer);
@@ -133,17 +98,15 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     upcxx::future<kmer_pair> future = upcxx::rpc(target_rank,
                                             [](upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
-                                               const pkmer_t& key_kmer, const size_t& size) -> kmer_pair {
-//                                                std::cout << "Begin rpc" << std::endl;
+                                               const pkmer_t& key_kmer,
+                                               const size_t& size) -> kmer_pair {
                                                 uint64_t hash = key_kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
                                                 kmer_pair output = kmer_pair();
-//                                                std::cout << "About to enter do-while" << std::endl;
 
                                                 do {
                                                     uint64_t bin = (hash + probe++) % size;
-
                                                     uint64_t* used_local = local_used->local();
                                                     kmer_pair* data_local = local_data->local();
 
@@ -155,7 +118,6 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                     }
                                                 } while (!success && probe < size);
                                                 // if success is false, return the 'error kmer'
-//                                                std::cout << "Do-while exited" << std::endl;
                                                 if (!success) {
                                                     output.fb_ext[0] = 'N';
                                                     output.fb_ext[1] = 'N';
@@ -186,11 +148,5 @@ kmer_pair HashMap::read_slot(uint64_t slot) {
     kmer_pair *data_local = g_data.local();
     return data_local[slot];
 }
-
-//bool HashMap::request_slot(uint64_t slot) {
-//    int dst = 0;
-//    atomic_domain.compare_exchange(g_used, g_used + slot, 0, &dst, std::memory_order_relaxed).wait();
-//    return dst != 0;
-//}
 
 size_t HashMap::size() const noexcept { return my_size; }
