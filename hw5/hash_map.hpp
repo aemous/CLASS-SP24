@@ -58,7 +58,7 @@ HashMap::HashMap(size_t size) {
 
     // initialize the atomic domain we'll use for reserving slots
 //    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-    upcxx::atomic_domain<uint64_t> HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+    HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
     g_data = upcxx::new_array<kmer_pair>(size);
