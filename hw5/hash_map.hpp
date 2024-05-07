@@ -1,6 +1,8 @@
 #include "kmer_t.hpp"
 #include <upcxx/upcxx.hpp>
 
+static bool atomic_domain_initialized;
+
 struct HashMap {
 //    std::vector<kmer_pair> data;
 //    std::vector<int> used;
@@ -12,7 +14,6 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
     static upcxx::atomic_domain<uint64_t> atomic_domain;
-    static bool atomic_domain_initialized = false;
 
     size_t my_size;
 
