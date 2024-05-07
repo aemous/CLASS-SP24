@@ -134,12 +134,12 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                             [](upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                const pkmer_t& key_kmer, const size_t& size) -> kmer_pair {
-                                                std::cout << "Begin rpc" << std::endl;
+//                                                std::cout << "Begin rpc" << std::endl;
                                                 uint64_t hash = key_kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
                                                 kmer_pair output = kmer_pair();
-                                                std::cout << "About to enter do-while" << std::endl;
+//                                                std::cout << "About to enter do-while" << std::endl;
 
                                                 do {
                                                     uint64_t bin = (hash + probe++) % size;
@@ -155,7 +155,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                     }
                                                 } while (!success && probe < size);
                                                 // if success is false, return the 'error kmer'
-                                                std::cout << "Do-while exited" << std::endl;
+//                                                std::cout << "Do-while exited" << std::endl;
                                                 if (!success) {
                                                     output.fb_ext[0] = 'N';
                                                     output.fb_ext[1] = 'N';
