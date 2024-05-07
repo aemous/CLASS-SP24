@@ -79,7 +79,7 @@ HashMap::HashMap(size_t size) {
 bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
     static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-    std::cout << "Begin insert" << std::endl;
+//    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
 
     // this rpc should do everything
@@ -93,28 +93,28 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
                                                     const size_t& size) -> bool {
-                                                std::cout << "Begin RPC" << std::endl;
+//                                                std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
 
-                                                std::cout << "About to enter do-while" << std::endl;
+//                                                std::cout << "About to enter do-while" << std::endl;
 
                                                 do {
-                                                    std::cout << "Begin do-while, size: " << size << std::endl;
+//                                                    std::cout << "Begin do-while, size: " << size << std::endl;
                                                     uint64_t bin = (hash + probe++) % size;
 
-                                                    std::cout << "Bin " << unsigned(bin) << std::endl;
+//                                                    std::cout << "Bin " << unsigned(bin) << std::endl;
 
                                                     // attempt to request the bin
                                                     uint64_t* used_local = local_used->local();
-                                                    std::cout << "Call to local succes" << std::endl;
+//                                                    std::cout << "Call to local succes" << std::endl;
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
                                                     uint64_t result = ad.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
-                                                    std::cout << "Call to compare exchange succ" << std::endl;
+//                                                    std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
-                                                    std::cout << "Success = " << unsigned(result) << std::endl;
+//                                                    std::cout << "Success = " << unsigned(result) << std::endl;
                                                     success = result == 0;
                                                     if (success) {
                                                         // write to the bin
