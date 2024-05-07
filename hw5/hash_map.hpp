@@ -75,7 +75,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [this](const kmer_pair& kmer) -> bool {
+                                            [this](const kmer_pair& kmer, const size_t size) -> bool {
                                                 std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
@@ -84,8 +84,8 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 std::cout << "About to enter do-while" << std::endl;
 
                                                 do {
-                                                    std::cout << "Begin do-while" << std::endl;
-                                                    uint64_t bin = (hash + probe++) % size();
+                                                    std::cout << "Begin do-while, size: " << size << std::endl;
+                                                    uint64_t bin = (hash + probe++) % size;
 
                                                     std::cout << "Bin " << unsigned(bin) << std::endl;
 
@@ -100,10 +100,10 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                         kmer_pair *data_local = g_data.local();
                                                         data_local[bin] = kmer;
                                                     }
-                                                } while (!success && probe < size());
+                                                } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer);
+                                            }, kmer, size);
     return future.wait();
 }
 
