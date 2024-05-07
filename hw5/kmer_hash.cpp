@@ -102,6 +102,7 @@ int main(int argc, char** argv) {
     auto start_read = std::chrono::high_resolution_clock::now();
 
     std::list<std::list<kmer_pair>> contigs;
+    std::cout << "Begin finds" << std::endl;
     for (const auto& start_kmer : start_nodes) {
         std::list<kmer_pair> contig;
         contig.push_back(start_kmer);

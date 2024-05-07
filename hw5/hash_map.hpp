@@ -131,17 +131,21 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
     uint64_t target_rank = get_target(key_kmer);
 
     upcxx::future<kmer_pair> future = upcxx::rpc(target_rank,
-                                            [this](const pkmer_t key_kmer) -> kmer_pair {
+                                            [](upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
+                                               upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
+                                               const pkmer_t& key_kmer, const size_t& size) -> kmer_pair {
+                                                std::cout << "Begin rpc" << std::endl;
                                                 uint64_t hash = key_kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
                                                 kmer_pair output = kmer_pair();
+                                                std::cout << "About to enter do-while" << std::endl;
 
                                                 do {
-                                                    uint64_t bin = (hash + probe++) % size();
+                                                    uint64_t bin = (hash + probe++) % size;
 
-                                                    uint64_t* used_local = g_used.local();
-                                                    kmer_pair* data_local = g_data.local();
+                                                    uint64_t* used_local = local_used->local();
+                                                    kmer_pair* data_local = local_data->local();
 
                                                     if (used_local[bin] != 0) {
                                                         output = data_local[bin];
@@ -149,16 +153,16 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                             success = true;
                                                         }
                                                     }
-                                                } while (!success && probe < size());
+                                                } while (!success && probe < size);
                                                 // if success is false, return the 'error kmer'
-
+                                                std::cout << "Do-while exited" << std::endl;
                                                 if (!success) {
                                                     output.fb_ext[0] = 'N';
                                                     output.fb_ext[1] = 'N';
                                                 }
 
                                                 return output;
-                                            }, key_kmer);
+                                            }, key_kmer, size());
     // set val_kmer to the output of the rpc future, check if we received the 'error kmer', and return false only if we did
     val_kmer = future.wait();
 
