@@ -34,13 +34,13 @@ struct HashMap {
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
 
-    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
-        if (!atomic_domain_initialized) {
-            HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-            atomic_domain_initialized = true;
-        }
-        return HashMap::ad;
-    }
+//    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
+//        if (!atomic_domain_initialized) {
+//            HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+//            atomic_domain_initialized = true;
+//        }
+//        return HashMap::ad;
+//    }
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -58,6 +58,7 @@ HashMap::HashMap(size_t size) {
 
     // initialize the atomic domain we'll use for reserving slots
 //    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+    ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
     g_data = upcxx::new_array<kmer_pair>(size);
