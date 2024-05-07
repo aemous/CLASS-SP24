@@ -34,9 +34,9 @@ struct HashMap {
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
 
-    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
-        return HashMap::ad;
-    }
+//    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
+//        return HashMap::ad;
+//    }
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -77,7 +77,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 //    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
-    static upcxx::atomic_domain<uint64_t> ad_local = get_atomic_domain();
+    static upcxx::atomic_domain<uint64_t> ad_local = ad;
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
