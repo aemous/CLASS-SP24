@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     size_t n_kmers = line_count(kmer_fname);
 
     // Load factor of 0.5
-    size_t hash_table_size = n_kmers * (1.0 / 0.5);
+    size_t hash_table_size = n_kmers * (1.0 / 0.75);
     HashMap hashmap(hash_table_size);
 
     if (run_type == "verbose") {
@@ -71,9 +71,6 @@ int main(int argc, char** argv) {
 
     for (auto& kmer : kmers) {
         bool success = hashmap.insert(kmer);
-        if (success) {
-//            BUtil::print("Successful insert\n");
-        }
         if (!success) {
             throw std::runtime_error("Error: HashMap is full!");
         }
@@ -111,7 +108,6 @@ int main(int argc, char** argv) {
 
     auto end_read = std::chrono::high_resolution_clock::now();
     upcxx::barrier();
-    std::cout << "Finished finding" << std::endl;
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double> read = end_read - start_read;
