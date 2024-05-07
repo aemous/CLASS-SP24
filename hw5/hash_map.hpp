@@ -2,6 +2,7 @@
 #include <upcxx/upcxx.hpp>
 
 static bool atomic_domain_initialized;
+static upcxx::atomic_domain<uint64_t> ad;
 
 struct HashMap {
 //    std::vector<kmer_pair> data;
@@ -13,15 +14,13 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
-    static upcxx::atomic_domain<uint64_t> ad;
-
     size_t my_size;
 
     size_t size() const noexcept;
 
     HashMap(size_t size);
     ~HashMap() {
-        HashMap::ad.destroy();
+        ad.destroy();
         upcxx::delete_array(g_data);
         upcxx::delete_array(g_used);
     }
@@ -54,7 +53,7 @@ HashMap::HashMap(size_t size) {
 
     // initialize the atomic domain we'll use for reserving slots
 //    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-    HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+    ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
     g_data = upcxx::new_array<kmer_pair>(size);
@@ -77,7 +76,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 //    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
-    static upcxx::atomic_domain<uint64_t>& ad_local = &HashMap::ad;
+//    static upcxx::atomic_domain<uint64_t>& ad_local = &HashMap::ad;
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
@@ -109,7 +108,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //                                                    std::cout << "Call to local succes" << std::endl;
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
-                                                    uint64_t result = ad_local.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    uint64_t result = ad.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
 //                                                    std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
 //                                                    std::cout << "Success = " << unsigned(result) << std::endl;
