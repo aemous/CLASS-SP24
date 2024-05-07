@@ -51,7 +51,7 @@ struct HashMap {
 };
 
 HashMap::HashMap(size_t size) {
-    init_atomic_domain();
+//    init_atomic_domain();
     my_size = size;
 //    data.resize(size);
 //    used.resize(size, 0);
