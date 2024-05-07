@@ -92,7 +92,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>> local_used,
                                                     const kmer_pair& kmer,
-                                                    const size_t& size) -> bool {
+                                                    const size_t size) -> bool {
                                                 std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
