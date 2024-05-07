@@ -75,7 +75,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [this](const kmer_pair& kmer, const size_t size) -> bool {
+                                            [this](const kmer_pair& kmer, const size_t size, const upcxx::atomic_domain<uint64_t> atomic_domain) -> bool {
                                                 std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
@@ -105,7 +105,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer, size());
+                                            }, kmer, size(), atomic_domain);
     return future.wait();
 }
 
