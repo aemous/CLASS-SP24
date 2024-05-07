@@ -103,7 +103,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer, size);
+                                            }, kmer, size());
     return future.wait();
 }
 
