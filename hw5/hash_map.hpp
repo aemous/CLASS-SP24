@@ -106,7 +106,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     std::cout << "Bin " << unsigned(bin) << std::endl;
 
                                                     // attempt to request the bin
-                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->()
+                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->fetch(upcxx::rank_me()).wait();
                                                     uint64_t* used_local = local_used->local();
                                                     std::cout << "Call to local succes" << std::endl;
                                                     uint64_t result = HashMap::ad.compare_exchange(local_used-> + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
