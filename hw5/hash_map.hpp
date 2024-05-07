@@ -11,7 +11,7 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
-    upcxx::atomic_domain<uint64_t> atomic_domain;
+    static const upcxx::atomic_domain<uint64_t> atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});;
 
     size_t my_size;
 
@@ -19,7 +19,7 @@ struct HashMap {
 
     HashMap(size_t size);
     ~HashMap() {
-        atomic_domain.destroy();
+//        atomic_domain.destroy();
         upcxx::delete_array(g_data);
         upcxx::delete_array(g_used);
     }
@@ -31,6 +31,10 @@ struct HashMap {
 
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
+
+    upcxx::atomic_domain<uint64_t> get_atomic_domain() {
+        return atomic_domain;
+    }
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -46,7 +50,7 @@ HashMap::HashMap(size_t size) {
 //    used.resize(size, 0);
 
     // initialize the atomic domain we'll use for reserving slots
-    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+//    atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
     // allocate the global pointers
     g_data = upcxx::new_array<kmer_pair>(size);
@@ -105,7 +109,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer, size(), atomic_domain);
+                                            }, kmer, size(), get_atomic_domain());
     return future.wait();
 }
 
