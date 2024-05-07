@@ -81,7 +81,10 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 uint64_t probe = 0;
                                                 bool success = false;
 
+                                                std::cout << "About to enter do-while" << std::endl;
+
                                                 do {
+                                                    std::cout << "Begin do-while" << std::endl;
                                                     uint64_t bin = (hash + probe++) % size();
 
                                                     std::cout << "Bin " << unsigned(bin) << std::endl;
