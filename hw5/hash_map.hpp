@@ -87,7 +87,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [](
+                                            [&ad](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
@@ -109,7 +109,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
                                                     uint64_t* used_local = dist_value.local();
                                                     std::cout << "Call to local succes" << std::endl;
-                                                    uint64_t result = HashMap::ad.compare_exchange(dist_value + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    uint64_t result = ad.compare_exchange(dist_value + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
                                                     std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
                                                     std::cout << "Success = " << unsigned(result) << std::endl;
