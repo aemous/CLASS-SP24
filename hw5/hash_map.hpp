@@ -87,7 +87,11 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [](const kmer_pair& kmer, const size_t size) -> bool {
+                                            [](
+                                                    upcxx::dist_object<upcxx::global_ptr<kmer_pair>> local_data,
+                                                    upcxx::dist_object<upcxx::global_ptr<uint64_t>> local_used,
+                                                    const kmer_pair& kmer,
+                                                    const size_t size) -> bool {
                                                 std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
@@ -102,7 +106,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     std::cout << "Bin " << unsigned(bin) << std::endl;
 
                                                     // attempt to request the bin
-                                                    uint64_t* used_local = g_used.local();
+                                                    uint64_t* used_local = local_used->local();
                                                     std::cout << "Call to local succes" << std::endl;
                                                     uint64_t result = HashMap::ad.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
                                                     std::cout << "Call to compare exchange succ" << std::endl;
@@ -111,13 +115,13 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     success = result == 0;
                                                     if (success) {
                                                         // write to the bin
-                                                        kmer_pair *data_local = g_data.local();
+                                                        kmer_pair *data_local = local_data->local();
                                                         data_local[bin] = kmer;
                                                     }
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer, size());
+                                            }, d_data, d_used, kmer, size());
     return future.wait();
 }
 
