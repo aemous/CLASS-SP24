@@ -82,7 +82,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // TODO i have suspicions that this capture clause might not do what i want
     // will the instance fields referenced below reference the fields on the remote process or the caller ?
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
-    std::cout << "About to define future " << std::endl;
+//    std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
                                             [](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
