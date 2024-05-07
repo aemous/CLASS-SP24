@@ -11,7 +11,8 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
-    static const upcxx::atomic_domain<uint64_t> atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});;
+    static upcxx::atomic_domain<uint64_t> atomic_domain;
+    static bool atomic_domain_initialized = false;
 
     size_t my_size;
 
@@ -32,8 +33,11 @@ struct HashMap {
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
 
-    upcxx::atomic_domain<uint64_t> get_atomic_domain() {
-        return atomic_domain;
+    static void init_atomic_domain() {
+        if (!atomic_domain_initialized) {
+            atomic_domain = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
+            atomic_domain_initialized = true;
+        }
     }
 
     // Write and read to a logical data slot in the table.
@@ -45,6 +49,7 @@ struct HashMap {
 };
 
 HashMap::HashMap(size_t size) {
+    init_atomic_domain();
     my_size = size;
 //    data.resize(size);
 //    used.resize(size, 0);
@@ -109,7 +114,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, kmer, size(), get_atomic_domain());
+                                            }, kmer, size(), HashMap::atomic_domain);
     return future.wait();
 }
 
