@@ -66,14 +66,17 @@ HashMap::HashMap(size_t size) {
 
 bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
+    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
     // will the instance fields referenced below reference the fields on the remote process or the caller ?
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
+    std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
                                             [this](const kmer_pair& kmer) -> bool {
+                                                std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
@@ -86,7 +89,6 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     // attempt to request the bin
                                                     uint64_t* used_local = g_used.local();
                                                     uint64_t result = atomic_domain.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
-                                                    // TODO this wont work right ? if used_local[bin] = 1 already, this overwrites the value at bin
 //                                                    success = used_local[bin] != 0;
                                                     std::cout << "Success = " << unsigned(result) << std::endl;
                                                     success = result == 0;
