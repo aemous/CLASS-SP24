@@ -88,7 +88,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [](
+                                            [&HashMap::ad](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
