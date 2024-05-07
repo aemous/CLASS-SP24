@@ -110,8 +110,8 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     uint64_t* used_local = local_used->local();
                                                     std::cout << "Call to local succes" << std::endl;
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
-                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
-                                                    uint64_t result = ad.compare_exchange(dist_value + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+//                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
+                                                    uint64_t result = ad.compare_exchange(local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
                                                     std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
                                                     std::cout << "Success = " << unsigned(result) << std::endl;
