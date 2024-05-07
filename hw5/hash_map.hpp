@@ -80,7 +80,6 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
     std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
-    const size_t hash_size = size();
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
@@ -91,8 +90,8 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                             [](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
-                                                    const kmer_pair& kmer/*,
-                                                    const size_t size*/) -> bool {
+                                                    const kmer_pair& kmer,
+                                                    const size_t& size) -> bool {
                                                 const size_t = 2000000;
                                                 std::cout << "Begin RPC" << std::endl;
                                                 uint64_t hash = kmer.hash();
@@ -124,7 +123,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 } while (!success && probe < size);
 
                                                 return success;
-                                            }, d_data, d_used, kmer/*, hash_size*/);
+                                            }, d_data, d_used, kmer, size());
     return future.wait();
 }
 
