@@ -92,6 +92,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
+                                                upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 
                                                 std::cout << "About to enter do-while" << std::endl;
 
@@ -104,7 +105,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                     // attempt to request the bin
                                                     uint64_t* used_local = g_used.local();
                                                     std::cout << "Call to local succes" << std::endl;
-                                                    uint64_t result = HashMap::ad.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    uint64_t result = ad.compare_exchange(g_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
                                                     std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
                                                     std::cout << "Success = " << unsigned(result) << std::endl;
