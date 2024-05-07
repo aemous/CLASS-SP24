@@ -13,7 +13,7 @@ struct HashMap {
     upcxx::dist_object<upcxx::global_ptr<kmer_pair>> d_data;
     upcxx::dist_object<upcxx::global_ptr<uint64_t>> d_used;
 
-    static upcxx::atomic_domain<uint64_t> ad;
+//    static upcxx::atomic_domain<uint64_t> ad;
 
     size_t my_size;
 
@@ -78,6 +78,7 @@ HashMap::HashMap(size_t size) {
 
 bool HashMap::insert(const kmer_pair& kmer) {
     // get the target process
+    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
     std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
 
@@ -87,7 +88,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [&ad](
+                                            [](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
