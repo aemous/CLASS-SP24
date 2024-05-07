@@ -162,7 +162,7 @@ bool HashMap::find(const pkmer_t& key_kmer, kmer_pair& val_kmer) {
                                                 }
 
                                                 return output;
-                                            }, key_kmer, size());
+                                            }, d_data, d_used, key_kmer, size());
     // set val_kmer to the output of the rpc future, check if we received the 'error kmer', and return false only if we did
     val_kmer = future.wait();
 
