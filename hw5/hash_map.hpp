@@ -34,13 +34,9 @@ struct HashMap {
     // Helper functions
     uint64_t get_target(const pkmer_t& kmer);
 
-//    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
-//        if (!atomic_domain_initialized) {
-//            HashMap::ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
-//            atomic_domain_initialized = true;
-//        }
-//        return HashMap::ad;
-//    }
+    static upcxx::atomic_domain<uint64_t> get_atomic_domain() {
+        return HashMap::ad;
+    }
 
     // Write and read to a logical data slot in the table.
     void write_slot(uint64_t slot, const kmer_pair& kmer);
@@ -81,6 +77,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //    static upcxx::atomic_domain<uint64_t> ad = upcxx::atomic_domain<uint64_t>({upcxx::atomic_op::compare_exchange});
 //    std::cout << "Begin insert" << std::endl;
     uint64_t target_rank = get_target(kmer.kmer);
+    static upcxx::atomic_domain<uint64_t> ad_local = get_atomic_domain();
 
     // this rpc should do everything
     // TODO i have suspicions that this capture clause might not do what i want
@@ -88,7 +85,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
     // we want it to be the remote process. if it's the caller, we SHOULD get an error when calling .local() on the global ptrs
     std::cout << "About to define future " << std::endl;
     upcxx::future<bool> future = upcxx::rpc(target_rank,
-                                            [&ad](
+                                            [](
                                                     upcxx::dist_object<upcxx::global_ptr<kmer_pair>>& local_data,
                                                     upcxx::dist_object<upcxx::global_ptr<uint64_t>>& local_used,
                                                     const kmer_pair& kmer,
@@ -97,6 +94,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
                                                 uint64_t hash = kmer.hash();
                                                 uint64_t probe = 0;
                                                 bool success = false;
+
 
 //                                                std::cout << "About to enter do-while" << std::endl;
 
@@ -111,7 +109,7 @@ bool HashMap::insert(const kmer_pair& kmer) {
 //                                                    std::cout << "Call to local succes" << std::endl;
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used.fetch(upcxx::rank_me()).wait();
 //                                                    upcxx::global_ptr<uint64_t> dist_value = local_used->;
-                                                    uint64_t result = ad.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
+                                                    uint64_t result = ad_local.compare_exchange(*local_used + bin, (uint64_t) 0, (uint64_t) 1, std::memory_order_relaxed).wait();
 //                                                    std::cout << "Call to compare exchange succ" << std::endl;
 //                                                    success = used_local[bin] != 0;
 //                                                    std::cout << "Success = " << unsigned(result) << std::endl;
